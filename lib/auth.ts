@@ -1,19 +1,38 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import { supabase } from './supabaseClient'
+import { DbUser } from '../types'
 
-export function authenticateUser(email: string, password: string) {
-  // TODO: Implement actual authentication logic
-  return Promise.resolve({ id: '1', name: 'John Doe', email })
+export async function getCurrentUser(): Promise<DbUser | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  if (error) throw error
+  return data
 }
 
-export function withAuth(handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>) {
-  return async (req: NextApiRequest, res: NextApiResponse) => {
-    const token = req.headers.authorization?.split(' ')[1]
-    if (!token) {
-      res.status(401).json({ message: 'Unauthorized' })
-      return
-    }
-    // TODO: Validate token
-    await handler(req, res)
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+export function withAuth<T>(handler: (user: DbUser, ...args: any[]) => Promise<T>) {
+  return async (...args: any[]): Promise<T> => {
+    const user = await getCurrentUser()
+    if (!user) throw new Error('Unauthorized')
+    return handler(user, ...args)
   }
 }
-

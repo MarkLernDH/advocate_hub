@@ -13,7 +13,7 @@ export async function validateLinkSubmission(link: string): Promise<boolean> {
       
       // For now, we'll just check if the page contains the advocate's name or the challenge title
       // This is a simple example and should be expanded based on your specific requirements
-      const pageContent = response.data.toLowerCase();
+      const pageContent = (response.data as string).toLowerCase();
       const advocateName = 'john doe'; // This should be dynamically set
       const challengeTitle = 'write a product review'; // This should be dynamically set
       
