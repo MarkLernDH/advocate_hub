@@ -124,7 +124,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {challenges.map((challenge) => (
             <Card key={challenge.id} className="p-6">
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col h-full">
                 <Image
                   src={challenge.icon}
                   alt={challenge.platform}
@@ -133,8 +133,8 @@ export default function Dashboard() {
                   className="mb-4"
                 />
                 <h2 className="text-xl font-semibold mb-3">{challenge.title}</h2>
-                <p className="text-gray-600 mb-6">{challenge.description}</p>
-                <div className="flex justify-between items-center w-full">
+                <p className="text-gray-600 mb-auto">{challenge.description}</p>
+                <div className="flex justify-between items-center w-full mt-6">
                   <span className="text-sm font-medium text-blue-600">
                     {challenge.points} points
                   </span>
