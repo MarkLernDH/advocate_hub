@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '../providers/AuthProvider'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { Provider } from '@supabase/supabase-js'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -15,6 +16,7 @@ export default function LoginForm() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_KEY!
   )
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -25,7 +27,7 @@ export default function LoginForm() {
     }
   }
 
-  const handleOAuthSignIn = async (provider: 'google' | 'microsoft') => {
+  const handleOAuthSignIn = async (provider: Provider) => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -119,7 +121,7 @@ export default function LoginForm() {
             </button>
 
             <button
-              onClick={() => handleOAuthSignIn('microsoft')}
+              onClick={() => handleOAuthSignIn('azure')}
               className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
             >
               <span className="sr-only">Sign in with Microsoft</span>
