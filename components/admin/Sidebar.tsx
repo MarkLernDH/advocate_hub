@@ -12,11 +12,11 @@ import {
 } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/(protected)/admin/dashboard', icon: LayoutDashboard },
-  { name: 'Challenges', href: '/(protected)/admin/challenges', icon: Trophy },
-  { name: 'Advocates', href: '/(protected)/admin/advocates', icon: Users },
-  { name: 'Analytics', href: '/(protected)/admin/analytics', icon: BarChart },
-  { name: 'Settings', href: '/(protected)/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Challenges', href: '/admin/challenges', icon: Trophy },
+  { name: 'Advocates', href: '/admin/advocates', icon: Users },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
 export function Sidebar() {

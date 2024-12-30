@@ -15,77 +15,84 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_KEY!,
     {
       cookies: {
-        getAll: () => {
-          return Array.from(request.cookies.getAll()).map(cookie => ({
-            name: cookie.name,
-            value: cookie.value,
-          }))
+        get(name: string) {
+          return request.cookies.get(name)?.value
         },
-        setAll: (cookies) => {
-          cookies.forEach((cookie) => {
-            response.cookies.set({
-              name: cookie.name,
-              value: cookie.value,
-              ...cookie.options
-            })
+        set(name: string, value: string, options: any) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
           })
-        }
-      }
+        },
+        remove(name: string, options: any) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
     }
   )
 
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Check route types
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/(protected)')
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/(protected)/admin')
-
-  // If not authenticated and trying to access protected route, redirect to login
-  if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/auth/login', request.url)
+  // If not logged in and trying to access protected routes, redirect to login
+  if (!session && (
+    request.nextUrl.pathname.startsWith('/admin') ||
+    request.nextUrl.pathname.startsWith('/advocate')
+  )) {
+    const redirectUrl = new URL('/auth/signin', request.url)
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If authenticated and trying to access auth routes, redirect to appropriate dashboard
-  if (isAuthRoute && session) {
-    // Get user role from Supabase
-    const { data: userData } = await supabase
+  // If logged in, fetch user role
+  if (session) {
+    const { data: user } = await supabase
       .from('users')
       .select('role')
       .eq('id', session.user.id)
       .single()
 
-    const redirectUrl = userData?.role === UserRole.ADMIN 
-      ? new URL('/(protected)/admin/dashboard', request.url)
-      : new URL('/(protected)/advocate/dashboard', request.url)
-    
-    return NextResponse.redirect(redirectUrl)
-  }
+    // If user is not found or has no role, redirect to error page
+    if (!user?.role) {
+      return NextResponse.redirect(new URL('/auth/error', request.url))
+    }
 
-  // If trying to access admin routes without admin role, redirect to advocate dashboard
-  if (isAdminRoute && session) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
+    // If accessing admin routes but not an admin, redirect to advocate dashboard
+    if (request.nextUrl.pathname.startsWith('/admin') && user.role !== UserRole.ADMIN) {
+      return NextResponse.redirect(new URL('/advocate/dashboard', request.url))
+    }
 
-    if (userData?.role !== UserRole.ADMIN) {
-      return NextResponse.redirect(new URL('/(protected)/advocate/dashboard', request.url))
+    // If accessing advocate routes but not an advocate, redirect to admin dashboard
+    if (request.nextUrl.pathname.startsWith('/advocate') && user.role !== UserRole.ADVOCATE) {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    }
+
+    // If at root, redirect based on role
+    if (request.nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL(
+        user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
+        request.url
+      ))
     }
   }
 
   return response
 }
 
-// Configure which routes to run middleware on
 export const config = {
   matcher: [
-    // Protected routes
-    '/(protected)/:path*',
-    // Auth routes
-    '/auth/:path*'
-  ]
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - auth folder (authentication pages)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public|auth).*)',
+  ],
 }
