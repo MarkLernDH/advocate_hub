@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const ensureUserRecord = async (authUser: User) => {
+    console.log('Ensuring user record for:', authUser.id)
     try {
       // Check if user exists in our users table
       const { data: existingUser, error: fetchError } = await supabase
@@ -31,13 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', authUser.id)
         .maybeSingle()
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('Error fetching user:', fetchError)
+        throw fetchError
+      }
 
       if (existingUser) {
+        console.log('Found existing user:', existingUser)
         setDbUser(existingUser as DbUser)
         return
       }
 
+      console.log('Creating new user record')
       // Create new user record if it doesn't exist
       const { data: newUser, error: insertError } = await supabase
         .from('users')
@@ -55,28 +61,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select()
         .single()
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error('Error creating user:', insertError)
+        throw insertError
+      }
+      
+      console.log('Created new user:', newUser)
       setDbUser(newUser as DbUser)
     } catch (error) {
       console.error('Error ensuring user record:', error)
-      // Don't throw here to prevent breaking the auth flow
+      setLoading(false) // Ensure we stop loading even if there's an error
     }
   }
 
   useEffect(() => {
+    console.log('Setting up auth subscriptions')
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Got initial session:', session?.user?.id)
       setUser(session?.user ?? null)
       if (session?.user) {
         ensureUserRecord(session.user)
+          .finally(() => setLoading(false))
+      } else {
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id)
       setUser(session?.user ?? null)
       if (session?.user) {
         await ensureUserRecord(session.user)
@@ -86,10 +102,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      console.log('Cleaning up auth subscriptions')
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting sign in for:', email)
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -98,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string) => {
+    console.log('Attempting sign up for:', email)
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -106,12 +127,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    console.log('Signing out')
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
-  
 
   if (loading) {
+    console.log('Auth provider is loading')
     return <LoadingSpinner />
   }
 
@@ -130,10 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
+
 export function useAuth() {
-    const context = useContext(AuthContext)
-    if (context === undefined) {
-      throw new Error('useAuth must be used within an AuthProvider')
-    }
-    return context
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
+  return context
+}
