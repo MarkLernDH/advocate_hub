@@ -16,14 +16,13 @@ export default function LoginForm() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_KEY!
   )
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     try {
       await signIn(email, password)
-      router.push('/')
-      router.refresh()
+      // Use replace instead of push to prevent back navigation to login
+      router.replace('/')
     } catch (error: any) {
       setError(error.message || 'Invalid email or password')
     }
@@ -35,7 +34,8 @@ export default function LoginForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false
         }
       })
       if (error) throw error
