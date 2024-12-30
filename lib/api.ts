@@ -84,19 +84,19 @@ export async function getChallengeById(challengeId: string): Promise<DbChallenge
   return data as unknown as Database['public']['Tables']['challenges']['Row']
 }
 
-export async function getUserChallenges(userId: string): Promise<(DbUserChallenge & { challenge: DbChallenge })[]> {
-  const { data, error } = await supabase
-    .from('user_challenges')
-    .select('*, challenge:challenges(*)')
-    .eq('user_id', userId)
-
-  if (error) throw error
+async function getUserChallenges(userId: string): Promise<(DbUserChallenge & { challenge: DbChallenge })[]> {
+    const { data, error } = await supabase
+      .from('user_challenges')
+      .select('*, challenge:challenges(*)')
+      .eq('user_id', userId)
   
-  return (data || []).map(item => ({
-    ...(item as unknown as Database['public']['Tables']['user_challenges']['Row']),
-    challenge: item.challenge as unknown as Database['public']['Tables']['challenges']['Row']
-  }))
-}
+    if (error) throw error
+    
+    return (data || []).map((item: { challenge: unknown }) => ({
+      ...(item as unknown as Database['public']['Tables']['user_challenges']['Row']),
+      challenge: item.challenge as unknown as Database['public']['Tables']['challenges']['Row']
+    }))
+  }
 
 // Advocate Operations
 export async function getAdvocateProfile(userId: string): Promise<DbAdvocate | null> {
