@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabaseClient'
-import { DbUser } from '../../../types'
-import { getUser } from '../../../lib/api'
+import { DbUser, AdvocateLevel } from '../../../types'
 import LoadingSpinner from '../shared/LoadingSpinner'
 
 interface AuthContextType {
@@ -23,14 +22,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [dbUser, setDbUser] = useState<DbUser | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const ensureUserRecord = async (authUser: User) => {
+    try {
+      // Check if user exists in our users table
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle()
+
+      if (fetchError) throw fetchError
+
+      if (existingUser) {
+        setDbUser(existingUser as DbUser)
+        return
+      }
+
+      // Create new user record if it doesn't exist
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authUser.id,
+            email: authUser.email,
+            points: 0,
+            tier: AdvocateLevel.BRONZE,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_active: true
+          }
+        ])
+        .select()
+        .single()
+
+      if (insertError) throw insertError
+      setDbUser(newUser as DbUser)
+    } catch (error) {
+      console.error('Error ensuring user record:', error)
+      // Don't throw here to prevent breaking the auth flow
+    }
+  }
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        getUser(session.user.id)
-          .then(setDbUser)
-          .catch(console.error)
+        ensureUserRecord(session.user)
       }
       setLoading(false)
     })
@@ -41,8 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        const dbUser = await getUser(session.user.id)
-        setDbUser(dbUser)
+        await ensureUserRecord(session.user)
       } else {
         setDbUser(null)
       }
@@ -72,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
+  
 
   if (loading) {
     return <LoadingSpinner />
@@ -92,11 +130,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
-
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    const context = useContext(AuthContext)
+    if (context === undefined) {
+      throw new Error('useAuth must be used within an AuthProvider')
+    }
+    return context
   }
-  return context
-}

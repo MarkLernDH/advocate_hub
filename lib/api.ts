@@ -5,19 +5,55 @@ import {
   DbUserChallenge, 
   DbAdvocate,
   SubmissionStatus,
-  ChallengeStatus 
+  ChallengeStatus,
+  AdvocateLevel 
 } from '../types'
 
 // User Operations
 export async function getUser(userId: string) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single()
+  try {
+    // First try to get the existing user
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
 
-  if (error) throw error
-  return data as DbUser
+    if (fetchError) {
+      console.error('Error fetching user:', fetchError)
+      throw fetchError
+    }
+
+    if (existingUser) {
+      return existingUser as DbUser
+    }
+
+    // If user doesn't exist, create a new one
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert([
+        {
+          id: userId,
+          points: 0,
+          tier: AdvocateLevel.BRONZE,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_active: true
+        }
+      ])
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error creating user:', insertError)
+      throw insertError
+    }
+
+    return newUser as DbUser
+  } catch (error) {
+    console.error('Error in getUser:', error)
+    throw error
+  }
 }
 
 // Challenge Operations
