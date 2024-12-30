@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient'
-import { DbUser } from '../types'
+import { DbUser, Database } from '../types'
 
 export async function getCurrentUser(): Promise<DbUser | null> {
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,7 +12,9 @@ export async function getCurrentUser(): Promise<DbUser | null> {
     .single()
 
   if (error) throw error
-  return data
+  if (!data) return null
+  
+  return data as unknown as Database['public']['Tables']['users']['Row']
 }
 
 export async function signIn(email: string, password: string) {
@@ -27,12 +29,4 @@ export async function signIn(email: string, password: string) {
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   if (error) throw error
-}
-
-export function withAuth<T>(handler: (user: DbUser, ...args: any[]) => Promise<T>) {
-  return async (...args: any[]): Promise<T> => {
-    const user = await getCurrentUser()
-    if (!user) throw new Error('Unauthorized')
-    return handler(user, ...args)
-  }
 }

@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient'
-import { DbUser, AdvocateLevel } from '../types'
+import { DbUser, AdvocateLevel, Database } from '../types'
 
 export function calculateNextTier(points: number): AdvocateLevel {
   if (points >= 10000) return AdvocateLevel.PLATINUM
@@ -16,8 +16,10 @@ export async function updateUserPoints(userId: string, pointsToAdd: number) {
     .single()
   
   if (fetchError) throw fetchError
+  if (!user) throw new Error('User not found')
 
-  const newPoints = (user.points || 0) + pointsToAdd
+  const currentPoints = user.points as number || 0
+  const newPoints = currentPoints + pointsToAdd
   const newTier = calculateNextTier(newPoints)
 
   const { error: updateError } = await supabase

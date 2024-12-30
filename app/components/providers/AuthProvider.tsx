@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabaseClient'
-import { DbUser, AdvocateLevel } from '../../../types'
+import { DbUser, AdvocateLevel, Database } from '../../../types'
 import LoadingSpinner from '../shared/LoadingSpinner'
 
 interface AuthContextType {
@@ -39,25 +39,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (existingUser) {
         console.log('Found existing user:', existingUser)
-        setDbUser(existingUser as DbUser)
-        return existingUser
+        // Type assertion for database row
+        const user = existingUser as unknown as Database['public']['Tables']['users']['Row']
+        setDbUser(user)
+        return user
       }
 
       console.log('Creating new user record')
       // Create new user record if it doesn't exist
+      const newUserData: Database['public']['Tables']['users']['Insert'] = {
+        id: authUser.id,
+        email: authUser.email!,
+        points: 0,
+        tier: AdvocateLevel.BRONZE,
+        is_active: true
+      }
+
       const { data: newUser, error: insertError } = await supabase
         .from('users')
-        .insert([
-          {
-            id: authUser.id,
-            email: authUser.email,
-            points: 0,
-            tier: AdvocateLevel.BRONZE,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            is_active: true
-          }
-        ])
+        .insert([newUserData])
         .select()
         .single()
 
@@ -66,15 +66,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw insertError
       }
       
+      if (!newUser) {
+        throw new Error('Failed to create user record')
+      }
+
       console.log('Created new user:', newUser)
-      setDbUser(newUser as DbUser)
-      return newUser
+      // Type assertion for database row
+      const user = newUser as unknown as Database['public']['Tables']['users']['Row']
+      setDbUser(user)
+      return user
     } catch (error) {
       console.error('Error ensuring user record:', error)
-      throw error // Re-throw to handle in the calling function
+      throw error
     }
   }
-
   useEffect(() => {
     let mounted = true
     console.log('Setting up auth subscriptions')

@@ -16,13 +16,14 @@ export default function LoginForm() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_KEY!
   )
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     try {
       await signIn(email, password)
-      // Use replace instead of push to prevent back navigation to login
-      router.replace('/')
+      // Use replace and wait for navigation to complete
+      await router.replace('/')
     } catch (error: any) {
       setError(error.message || 'Invalid email or password')
     }
@@ -43,6 +44,7 @@ export default function LoginForm() {
       setError(error.message || 'Error signing in with ' + provider)
     }
   }
+
 
 
   return (
