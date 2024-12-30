@@ -124,24 +124,24 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {challenges.map((challenge) => (
             <Card key={challenge.id} className="p-6">
-              <div className="flex items-center mb-4">
+              <div className="flex flex-col items-center text-center">
                 <Image
                   src={challenge.icon}
                   alt={challenge.platform}
-                  width={24}
-                  height={24}
-                  className="mr-2"
+                  width={40}
+                  height={40}
+                  className="mb-4"
                 />
-                <h2 className="text-xl font-semibold">{challenge.title}</h2>
-              </div>
-              <p className="text-gray-600 mb-4">{challenge.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-blue-600">
-                  {challenge.points} points
-                </span>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                  Start Challenge
-                </button>
+                <h2 className="text-xl font-semibold mb-3">{challenge.title}</h2>
+                <p className="text-gray-600 mb-6">{challenge.description}</p>
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-sm font-medium text-blue-600">
+                    {challenge.points} points
+                  </span>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Start Challenge
+                  </button>
+                </div>
               </div>
             </Card>
           ))}
