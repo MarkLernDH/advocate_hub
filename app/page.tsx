@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from './components/providers/AuthProvider'
 import { Card } from "../components/ui/card"
 import Image from 'next/image'
 import { DbUser } from '../types'
-
+import { supabase } from '../lib/supabaseClient'
 
 interface Challenge {
   id: string
@@ -43,8 +43,11 @@ const challenges: Challenge[] = [
     icon: '/g2.svg'
   }
 ]
+
 export default function Dashboard() {
   const { user, loading } = useAuth()
+  const [dbUser, setDbUser] = useState<DbUser | null>(null)
+  const [userLoading, setUserLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
@@ -53,19 +56,71 @@ export default function Dashboard() {
     }
   }, [user, loading, router])
 
-  if (loading) {
+  useEffect(() => {
+    async function fetchUserData() {
+      if (!user?.id) return
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (error) throw error
+        setDbUser(data)
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchUserData()
+    }
+  }, [user])
+
+  if (loading || userLoading) {
     return <div>Loading...</div>
   }
 
-  if (!user) {
+  if (!user || !dbUser) {
     return null // Will redirect in useEffect
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-8">Welcome to Advocacy Hub</h1>
-        
+    <main className="flex min-h-screen flex-col">
+      {/* Welcome Banner */}
+      <div className="bg-navy-900 text-white p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-8">
+              <h1 className="text-3xl font-bold">
+                Welcome Back, <span className="text-emerald-400">{dbUser.email?.split('@')[0]}</span>
+              </h1>
+              <div className="flex items-center space-x-8">
+                <div className="text-center">
+                  <div className="text-emerald-400 font-semibold">{dbUser.tier}</div>
+                  <div className="text-sm text-gray-300">Advocate Level</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-emerald-400 font-semibold">{dbUser.points.toLocaleString()}</div>
+                  <div className="text-sm text-gray-300">Total Points</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-emerald-400 font-semibold">2</div>
+                  <div className="text-sm text-gray-300">Completed Rewards</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Challenges Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h2 className="text-2xl font-semibold mb-6">Recommended for you</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {challenges.map((challenge) => (
             <Card key={challenge.id} className="p-6">
