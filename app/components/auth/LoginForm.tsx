@@ -19,15 +19,18 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     try {
       await signIn(email, password)
-      router.push('/dashboard')
-    } catch (error) {
-      setError('Invalid email or password')
+      router.push('/')
+      router.refresh()
+    } catch (error: any) {
+      setError(error.message || 'Invalid email or password')
     }
   }
 
   const handleOAuthSignIn = async (provider: Provider) => {
+    setError('')
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -36,10 +39,11 @@ export default function LoginForm() {
         }
       })
       if (error) throw error
-    } catch (error) {
-      setError('Error signing in with ' + provider)
+    } catch (error: any) {
+      setError(error.message || 'Error signing in with ' + provider)
     }
   }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
