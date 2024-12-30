@@ -6,22 +6,22 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function LoginPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       router.replace('/')
     }
-  }, [user, router])
+  }, [user, loading, router])
 
   // Don't render the form if we're already authenticated
-  if (user) {
+  if (loading || user) {
     return null
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <LoginForm />
     </div>
   )
