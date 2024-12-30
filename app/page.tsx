@@ -95,23 +95,30 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto w-full px-4 py-8">
         <div className="bg-navy-900 text-white p-8 rounded-lg">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-3xl font-bold">
-                Welcome Back, <span className="text-emerald-400">{dbUser.email?.split('@')[0]}</span>
-              </h1>
-              <div className="flex items-center space-x-8">
-                <div className="text-center">
-                  <div className="text-emerald-400 font-semibold">{dbUser.tier}</div>
-                  <div className="text-sm text-gray-300">Advocate Level</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-emerald-400 font-semibold">{dbUser.points.toLocaleString()}</div>
-                  <div className="text-sm text-gray-300">Total Points</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-emerald-400 font-semibold">2</div>
-                  <div className="text-sm text-gray-300">Completed Rewards</div>
-                </div>
+            <h1 className="text-3xl font-bold">
+              Welcome Back, <span className="text-emerald-400">{dbUser.email?.split('@')[0]}</span>
+            </h1>
+            <div className="flex gap-8">
+              <div className="bg-navy-800 p-6 rounded-lg text-center min-w-[240px]">
+                <div className="text-gray-300 mb-2">Advocacy Level</div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">Gold</div>
+                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
+                  View Benefits <span className="ml-1">→</span>
+                </button>
+              </div>
+              <div className="bg-navy-800 p-6 rounded-lg text-center min-w-[240px]">
+                <div className="text-gray-300 mb-2">Total Points</div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">{dbUser.points.toLocaleString()}</div>
+                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
+                  View History <span className="ml-1">→</span>
+                </button>
+              </div>
+              <div className="bg-navy-800 p-6 rounded-lg text-center min-w-[240px]">
+                <div className="text-gray-300 mb-2">Unlocked Rewards</div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">2</div>
+                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
+                  Redeem <span className="ml-1">→</span>
+                </button>
               </div>
             </div>
           </div>
