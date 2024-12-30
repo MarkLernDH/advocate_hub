@@ -19,6 +19,12 @@ export default {
           DEFAULT: "hsl(210 40% 96.1%)",
           foreground: "hsl(215.4 16.3% 46.9%)",
         },
+        navy: {
+          900: "#0A1A2F",
+        },
+        emerald: {
+          400: "#34D399",
+        },
       },
     },
   },
