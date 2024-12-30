@@ -92,8 +92,8 @@ export default function Dashboard() {
   return (
     <main className="flex min-h-screen flex-col">
       {/* Welcome Banner */}
-      <div className="bg-navy-900 text-white p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto w-full px-4 py-8">
+        <div className="bg-navy-900 text-white p-8 rounded-lg">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-8">
               <h1 className="text-3xl font-bold">
