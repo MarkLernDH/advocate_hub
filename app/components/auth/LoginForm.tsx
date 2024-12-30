@@ -13,24 +13,23 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
   const router = useRouter()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
     try {
       await signIn(email, password)
-      // Delay the navigation slightly to allow auth state to update
-      setTimeout(() => {
-        router.replace('/')
-      }, 100)
+      // Clear form
+      setEmail('')
+      setPassword('')
+      // Navigate immediately - the AuthProvider will handle redirecting if not authenticated
+      router.replace('/')
     } catch (error: any) {
       setError(error.message || 'Invalid email or password')
     } finally {
       setIsLoading(false)
     }
   }
-
   const handleOAuthSignIn = async (provider: Provider) => {
     setError('')
     setIsLoading(true)
