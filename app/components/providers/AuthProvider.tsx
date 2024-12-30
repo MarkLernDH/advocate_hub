@@ -80,13 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
   }
+
   useEffect(() => {
     let mounted = true
     console.log('Setting up auth subscriptions')
     
     const initializeAuth = async () => {
       try {
-        setLoading(true)
         const { data: { session } } = await supabase.auth.getSession()
         console.log('Got initial session:', session?.user?.id)
         
@@ -94,6 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null)
           if (session?.user) {
             await ensureUserRecord(session.user)
+          } else {
+            setDbUser(null)
           }
         }
       } catch (error) {
@@ -115,9 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return
 
       try {
-        setLoading(true)
         setUser(session?.user ?? null)
-        
         if (session?.user) {
           await ensureUserRecord(session.user)
         } else {
@@ -125,10 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error handling auth state change:', error)
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
       }
     })
 
@@ -137,84 +133,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
-
-
-  useEffect(() => {
-    console.log('Setting up auth subscriptions')
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Got initial session:', session?.user?.id)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        ensureUserRecord(session.user)
-          .finally(() => setLoading(false))
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await ensureUserRecord(session.user)
-      } else {
-        setDbUser(null)
-      }
-      setLoading(false)
-    })
-
-    return () => {
-      console.log('Cleaning up auth subscriptions')
-      subscription.unsubscribe()
-    }
-  }, [])
+  }, []) // Empty dependency array to run only once
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email)
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (error) throw error
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const signUp = async (email: string, password: string) => {
-    console.log('Attempting sign up for:', email)
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-    if (error) throw error
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const signOut = async () => {
-    console.log('Signing out')
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      setUser(null)
+      setDbUser(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (loading) {
-    console.log('Auth provider is loading')
-    return <LoadingSpinner />
+  const value = {
+    user,
+    dbUser,
+    loading,
+    signIn,
+    signUp,
+    signOut,
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        dbUser,
-        loading,
-        signIn,
-        signUp,
-        signOut,
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={value}>
+      {loading ? <LoadingSpinner /> : children}
     </AuthContext.Provider>
   )
 }
