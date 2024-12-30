@@ -4,11 +4,18 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+interface Submission {
+  id: number
+  advocateName: string
+  challengeTitle: string
+  submissionDate: string
+  status: string
+}
 
 // Mock data for submissions
-const mockSubmissions = [
+const mockSubmissions: Submission[] = [
   { id: 1, advocateName: 'John Doe', challengeTitle: 'Write a Product Review', submissionDate: '2023-06-01', status: 'Pending' },
   { id: 2, advocateName: 'Jane Smith', challengeTitle: 'Attend a Webinar', submissionDate: '2023-06-02', status: 'Approved' },
   { id: 3, advocateName: 'Bob Johnson', challengeTitle: 'Share on Social Media', submissionDate: '2023-06-03', status: 'Rejected' },
@@ -16,18 +23,18 @@ const mockSubmissions = [
 ]
 
 export default function AdminSubmissions() {
-  const [submissions, setSubmissions] = useState(mockSubmissions)
+  const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions)
   const [filter, setFilter] = useState('')
-  const [sortBy, setSortBy] = useState('submissionDate')
-  const [sortOrder, setSortOrder] = useState('desc')
-  const [selectedSubmission, setSelectedSubmission] = useState(null)
+  const [sortBy, setSortBy] = useState<keyof Submission>('submissionDate')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
 
-  const handleFilter = (e) => {
+  const handleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(e.target.value.toLowerCase())
   }
 
-  const handleSort = (field) => {
-    if (sortBy === field) {
+  const handleSort = (field: keyof Submission) => {
+    if (field === sortBy) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortBy(field)
@@ -35,108 +42,96 @@ export default function AdminSubmissions() {
     }
   }
 
-  const filteredAndSortedSubmissions = submissions
-    .filter(submission => 
-      submission.advocateName.toLowerCase().includes(filter) ||
-      submission.challengeTitle.toLowerCase().includes(filter) ||
-      submission.status.toLowerCase().includes(filter)
+  const sortedSubmissions = [...submissions]
+    .filter(submission =>
+      Object.values(submission).some(value =>
+        String(value).toLowerCase().includes(filter)
+      )
     )
     .sort((a, b) => {
-      if (a[sortBy] < b[sortBy]) return sortOrder === 'asc' ? -1 : 1
-      if (a[sortBy] > b[sortBy]) return sortOrder === 'asc' ? 1 : -1
-      return 0
+      const aValue = String(a[sortBy])
+      const bValue = String(b[sortBy])
+      return sortOrder === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue)
     })
 
-  const handleReview = (submission) => {
+  const handleReview = (submission: Submission) => {
     setSelectedSubmission(submission)
-  }
-
-  const handleApprove = () => {
-    setSubmissions(submissions.map(sub => 
-      sub.id === selectedSubmission.id ? {...sub, status: 'Approved'} : sub
-    ))
-    setSelectedSubmission(null)
-  }
-
-  const handleReject = () => {
-    setSubmissions(submissions.map(sub => 
-      sub.id === selectedSubmission.id ? {...sub, status: 'Rejected'} : sub
-    ))
-    setSelectedSubmission(null)
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Submission Queue</h1>
-      <div className="flex justify-between items-center">
-        <Input
-          type="text"
-          placeholder="Filter submissions..."
-          onChange={handleFilter}
-          className="max-w-sm"
-        />
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="submissionDate">Submission Date</SelectItem>
-            <SelectItem value="advocateName">Advocate Name</SelectItem>
-            <SelectItem value="challengeTitle">Challenge Title</SelectItem>
-            <SelectItem value="status">Status</SelectItem>
-          </SelectContent>
-        </Select>
+      <h1 className="text-3xl font-bold">Submissions</h1>
+      
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Filter submissions..."
+            value={filter}
+            onChange={handleFilter}
+          />
+        </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('advocateName')}>Advocate Name</TableHead>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('challengeTitle')}>Challenge Title</TableHead>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('submissionDate')}>Submission Date</TableHead>
-            <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>Status</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredAndSortedSubmissions.map((submission) => (
-            <TableRow key={submission.id}>
-              <TableCell>{submission.advocateName}</TableCell>
-              <TableCell>{submission.challengeTitle}</TableCell>
-              <TableCell>{submission.submissionDate}</TableCell>
-              <TableCell>{submission.status}</TableCell>
-              <TableCell>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => handleReview(submission)}>Review</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Review Submission</DialogTitle>
-                      <DialogDescription>
-                        Review and approve or reject the submission.
-                      </DialogDescription>
-                    </DialogHeader>
-                    {selectedSubmission && (
-                      <div className="mt-4">
-                        <p><strong>Advocate:</strong> {selectedSubmission.advocateName}</p>
-                        <p><strong>Challenge:</strong> {selectedSubmission.challengeTitle}</p>
-                        <p><strong>Submission Date:</strong> {selectedSubmission.submissionDate}</p>
-                        <p><strong>Current Status:</strong> {selectedSubmission.status}</p>
-                        {/* Add more submission details here */}
-                        <div className="mt-4 flex justify-end space-x-2">
-                          <Button onClick={handleApprove} className="bg-green-500 hover:bg-green-600">Approve</Button>
-                          <Button onClick={handleReject} className="bg-red-500 hover:bg-red-600">Reject</Button>
-                        </div>
-                      </div>
-                    )}
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead onClick={() => handleSort('advocateName')} className="cursor-pointer">
+                Advocate Name {sortBy === 'advocateName' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('challengeTitle')} className="cursor-pointer">
+                Challenge {sortBy === 'challengeTitle' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('submissionDate')} className="cursor-pointer">
+                Submitted {sortBy === 'submissionDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('status')} className="cursor-pointer">
+                Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {sortedSubmissions.map((submission) => (
+              <TableRow key={submission.id}>
+                <TableCell>{submission.advocateName}</TableCell>
+                <TableCell>{submission.challengeTitle}</TableCell>
+                <TableCell>{submission.submissionDate}</TableCell>
+                <TableCell>{submission.status}</TableCell>
+                <TableCell>
+                  <Button onClick={() => handleReview(submission)}>Review</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={selectedSubmission !== null} onOpenChange={() => setSelectedSubmission(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Review Submission</DialogTitle>
+          </DialogHeader>
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium">Advocate</h3>
+                <p>{selectedSubmission.advocateName}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">Challenge</h3>
+                <p>{selectedSubmission.challengeTitle}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">Status</h3>
+                <p>{selectedSubmission.status}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-

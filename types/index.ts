@@ -105,6 +105,7 @@ export interface Submission {
     text?: string;
   };
   status: SubmissionStatus;
+  submittedAt: Date;
   reviewedAt?: Date;
   feedback?: string;
 }

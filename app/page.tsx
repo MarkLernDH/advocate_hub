@@ -1,55 +1,96 @@
 import { Card } from "../components/ui/card"
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_KEY!,
+    {
+      cookies: {
+        getAll: () => {
+          const cookieStore = cookies()
+          return Array.from(cookieStore.getAll()).map(cookie => ({
+            name: cookie.name,
+            value: cookie.value,
+          }))
+        },
+        setAll: (cookies) => {
+          cookies.forEach(({ name, value, ...options }) => {
+            // This won't actually set cookies in a server component,
+            // but we need to provide the method
+          })
+        }
+      }
+    }
+  )
+
+  // Get session and redirect if not authenticated
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    redirect('/auth/signin')
+  }
+
+  // Fetch user data
+  const { data: userData } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
+
+  // Fetch user stats
+  const { data: statsData } = await supabase
+    .from('user_stats')
+    .select('advocacy_level, total_points, unlocked_rewards')
+    .eq('user_id', session.user.id)
+    .single()
+
   const userStats = [
     {
       label: "Advocacy Level",
-      value: "Gold",
+      value: statsData?.advocacy_level || "Bronze",
       action: "View Benefits",
       href: "/benefits"
     },
     {
       label: "Total Points",
-      value: "31,662",
+      value: statsData?.total_points?.toLocaleString() || "0",
       action: "View History",
       href: "/history"
     },
     {
       label: "Unlocked Rewards",
-      value: "2",
+      value: statsData?.unlocked_rewards?.toString() || "0",
       action: "Redeem",
       href: "/rewards"
     }
   ]
 
-  const recommendedChallenges = [
-    {
-      icon: "/linkedin.svg",
-      title: "Share our latest report on LinkedIn",
-      points: 200,
-    },
-    {
-      icon: "/linkedin.svg",
-      title: "Comment on this LinkedIn thread?",
-      points: 200,
-    },
-    {
-      icon: "/g2.svg",
-      title: "Give us a review on G2!",
-      points: 200,
-    }
-  ]
+  // Fetch recommended challenges
+  const { data: recommendedChallenges = [] } = await supabase
+    .from('challenges')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  const challenges = (recommendedChallenges ?? []).map((challenge) => ({
+    icon: challenge.platform_icon || "/default-challenge.svg",
+    title: challenge.title,
+    points: challenge.points,
+  }))
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
-    {/* Header Section */}
-    <div className="p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-[#09143A] rounded-xl p-6 mb-6 text-white">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-white">
-              Welcome Back, <span className="text-[#4ADE80]">Mark</span>
-            </h1>
+      {/* Header Section */}
+      <div className="p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-[#09143A] rounded-xl p-6 mb-6 text-white">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-semibold text-white">
+                Welcome Back, <span className="text-[#4ADE80]">{userData?.name || session.user.email?.split('@')[0]}</span>
+              </h1>
               <div className="flex gap-6">
                 {userStats.map((stat) => (
                   <div key={stat.label} className="bg-[#0F1729]/50 rounded-lg p-4 min-w-[200px]">
@@ -70,7 +111,7 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h2 className="text-xl font-semibold mb-6">Recommended for you</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recommendedChallenges.map((challenge) => (
+          {challenges.map((challenge) => (
             <Card key={challenge.title} className="bg-white p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between">
                 <div>
@@ -96,5 +137,4 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  )
-}
+  )}
