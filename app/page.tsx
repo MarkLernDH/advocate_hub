@@ -99,21 +99,21 @@ export default function Dashboard() {
               Welcome Back, <span className="text-emerald-400">{dbUser.email?.split('@')[0]}</span>
             </h1>
             <div className="flex gap-8">
-              <div className="bg-navy-800 p-6 rounded-lg text-center min-w-[240px]">
+              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
                 <div className="text-gray-300 mb-2">Advocacy Level</div>
                 <div className="text-4xl font-bold text-emerald-400 mb-2">Gold</div>
                 <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
                   View Benefits <span className="ml-1">→</span>
                 </button>
               </div>
-              <div className="bg-navy-800 p-6 rounded-lg text-center min-w-[240px]">
+              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
                 <div className="text-gray-300 mb-2">Total Points</div>
                 <div className="text-4xl font-bold text-emerald-400 mb-2">{dbUser.points.toLocaleString()}</div>
                 <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
                   View History <span className="ml-1">→</span>
                 </button>
               </div>
-              <div className="bg-navy-800 p-6 rounded-lg text-center min-w-[240px]">
+              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
                 <div className="text-gray-300 mb-2">Unlocked Rewards</div>
                 <div className="text-4xl font-bold text-emerald-400 mb-2">2</div>
                 <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
