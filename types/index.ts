@@ -24,6 +24,45 @@ export enum SubmissionType {
   TEXT = 'TEXT'
 }
 
+export enum ChallengeType {
+  QUESTIONS = 'QUESTIONS',
+  ONLINE_ACTION = 'ONLINE_ACTION',
+  CORPORATE_APPROVAL = 'CORPORATE_APPROVAL',
+  ADVOCATE_WORKFLOW = 'ADVOCATE_WORKFLOW',
+  UPLOAD_IMAGE = 'UPLOAD_IMAGE',
+  UPLOAD_VIDEO = 'UPLOAD_VIDEO',
+  UPLOAD_FILE = 'UPLOAD_FILE',
+  DISCUSSION_REPLY = 'DISCUSSION_REPLY',
+  QUIZ = 'QUIZ',
+  JOIN_GROUP = 'JOIN_GROUP',
+  API_INTEGRATION = 'API_INTEGRATION',
+  SOCIAL_SHARE = 'SOCIAL_SHARE',
+  REFERRAL_SOCIAL = 'REFERRAL_SOCIAL',
+  TWITTER_POST = 'TWITTER_POST',
+  FOLLOW_TWITTER = 'FOLLOW_TWITTER',
+  NPS = 'NPS',
+  ONLINE_REVIEW = 'ONLINE_REVIEW',
+  G2_REVIEW = 'G2_REVIEW',
+  CHECK_IN = 'CHECK_IN'
+}
+
+export enum ProofType {
+  SCREENSHOT = 'SCREENSHOT',
+  LINK = 'LINK',
+  TEXT = 'TEXT',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  FILE = 'FILE',
+  SOCIAL_LINK = 'SOCIAL_LINK',
+  API_VERIFICATION = 'API_VERIFICATION',
+  ADMIN_APPROVAL = 'ADMIN_APPROVAL'
+}
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  ADVOCATE = 'ADVOCATE'
+}
+
 // Database Schema Types
 export interface Database {
   public: {
@@ -56,6 +95,7 @@ export interface Database {
 export interface DbUser {
   id: string
   email: string
+  role: UserRole
   points: number
   tier: AdvocateLevel
   created_at: string
@@ -83,12 +123,16 @@ export interface DbChallenge {
   ChallengeId: string
   Name: string
   Description?: string
-  Channel?: string
-  Type?: string
+  Type: ChallengeType
   Points: number
+  ProofRequirements: ProofType[]
+  ImageUrl?: string
+  Instructions: string[]
   AssignedAdvocates: number
   Completions: number
   is_active: boolean
+  created_at: string
+  deadline?: string
 }
 
 export interface DbUserChallenge {
@@ -116,10 +160,12 @@ export interface Challenge {
   id: string
   title: string
   description: string
+  type: ChallengeType
   points: number
-  submissionType: SubmissionType
+  proofRequirements: ProofType[]
+  imageUrl?: string
   instructions: string[]
-  deadline: Date
+  deadline?: Date
   status: ChallengeStatus
 }
 

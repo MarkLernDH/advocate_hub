@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabaseClient'
-import { DbUser, AdvocateLevel, Database } from '../../../types'
+import { DbUser, AdvocateLevel, UserRole, Database } from '../../../types'
 import LoadingSpinner from '../shared/LoadingSpinner'
 
 interface AuthContextType {
@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: authUser.email!,
         points: 0,
         tier: AdvocateLevel.BRONZE,
-        is_active: true
+        is_active: true,
+        role: UserRole.ADVOCATE // Default new users to advocate role
       }
 
       const { data: newUser, error: insertError } = await supabase

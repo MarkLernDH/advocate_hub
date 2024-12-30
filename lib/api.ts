@@ -7,6 +7,7 @@ import {
   SubmissionStatus,
   ChallengeStatus,
   AdvocateLevel,
+  UserRole,
   Database
 } from '../types'
 
@@ -34,7 +35,8 @@ export async function getUser(userId: string): Promise<DbUser | null> {
         points: 0,
         tier: AdvocateLevel.BRONZE,
         is_active: true,
-        email: ''
+        email: '',
+        role: UserRole.ADVOCATE // Default new users to advocate role
     }
 
     const { data: newUser, error: insertError } = await supabase
