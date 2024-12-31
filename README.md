@@ -1,113 +1,114 @@
-# Advocate Platform Overview
+# Advocacy Hub
 
-## What We're Building
-An engagement platform that converts satisfied customers into active brand advocates by gamifying helpful community actions. The platform tracks, rewards, and manages advocacy activities through structured "challenges" like writing reviews, sharing content, or providing testimonials.
+A gamified platform that converts customers into brand advocates through structured challenges and rewards.
 
-## Target Users
-Primary:
-- Product advocates: Customers willing to share positive experiences
-- Community managers: Staff who create/manage advocacy programs
-- Marketing teams: Stakeholders who measure advocacy impact
+## Technology Stack
 
-Secondary:
-- Product teams: Use testimonials/feedback
-- Sales teams: Leverage advocate content
-- Executive stakeholders: Track program ROI
+- **Frontend**: Next.js 14 with App Router
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Authentication**: Supabase Auth with magic links
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Type Safety**: TypeScript
+- **File Storage**: Supabase Storage
 
-## Why It Matters
-Problems Solved:
-- Scattered advocacy efforts lack structure/tracking
-- Manual reward distribution is time-consuming
-- Difficult to measure advocacy impact
-- Limited engagement with satisfied customers
-- Underutilized social proof opportunities
+## Core Features
 
-Benefits:
-- Systematizes customer advocacy
-- Automates reward distribution
-- Provides clear ROI metrics
-- Strengthens customer relationships
-- Generates authentic social proof
-
-## Core Workflow
-
-1. Admin Side:
-- Create challenges with clear instructions
-- Set point values and deadlines
-- Review submissions
-- Track program metrics
-- Manage reward fulfillment
-
-2. Advocate Side:
-- Browse available challenges
-- Submit proof of completion
-- Track points/status
-- Redeem rewards
-- View progress/history
-
-3. System Functions:
-- Validates submissions
-- Tracks points/levels
-- Sends notifications
-- Generates analytics
-- Manages file storage
-
-## Technical Approach
-
-Backend:
-- Node.js for scalability/ecosystem
-- PostgreSQL for structured data
-- Redis for caching/real-time
-- S3 for media storage
-
-Frontend:
-- React for component reuse
-- WebSocket for live updates
-- Progressive enhancement
-- Mobile-first design
-
-Integration:
-- REST API for CRUD
-- GraphQL for complex queries
-- OAuth for authentication
-- Webhook support
-
-This platform transforms passive satisfied customers into active brand advocates through structured engagement, while providing clear ROI metrics for stakeholders.
-
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+- 🔐 Role-based authentication (Advocates & Admins)
+- 📝 Challenge creation and management
+- ✅ Submission and review system
+- 🏆 Points-based reward system
+- 📊 Analytics dashboard
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+
+- npm/yarn/pnpm
+- Supabase account
+
+### Environment Setup
+
+Create a `.env.local` file with:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+/src
+  /app                     # Next.js 14 App Router
+    /api                   # Route handlers
+    /(auth)                # Auth route group
+    /(protected)           # Protected route group
+    /layout.tsx
+    /page.tsx              # Landing page
+  
+  /components             # Shared components
+    /ui                   # UI components
+    /admin               # Admin components
+    /advocate            # Advocate components
+    /auth               # Auth components
+  
+  /lib                   # Shared utilities
+    /supabase           # Supabase client/server
+    /utils.ts
+    /validation.ts
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Installation
 
-## Learn More
+```bash
+# Install dependencies
+npm install
 
-To learn more about Next.js, take a look at the following resources:
+# Run development server
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Database Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Create a new Supabase project
+Run the setup SQL scripts from /scripts
+Set up database policies for security
 
-## Deploy on Vercel
+```sql
+# Example policy setup included in /scripts/setup.sql
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Authentication Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Users sign in with magic link
+Role assignment (Admin/Advocate)
+Role-based routing to appropriate dashboard
 
+## Development Guidelines
+
+Use TypeScript for all new files
+Follow the existing component structure
+Add proper types for all props and state
+Use server components where possible
+Implement proper error handling
+
+## Database Schema
+
+Key tables:
+
+profiles: User profiles and points
+challenges: Available challenges
+submissions: Challenge submissions
+reviews: Submission reviews
+points_history: Point transaction log
+
+## Contributing
+
+Fork the repository
+Create a feature branch
+Submit a pull request
+
+## License
+
+MIT License

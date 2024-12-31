@@ -1,7 +1,12 @@
-export const SUPABASE_AUTH_COOKIE = 'advocacy-hub-auth'
-export const SESSION_EXPIRY = 60 * 60 * 8 // 8 hours
-export const AUTH_ROUTES = ['/auth/login', '/auth/callback']
+// Define routes that require authentication
 export const PROTECTED_ROUTES = {
-  admin: ['/admin', '/admin/dashboard', '/admin/challenges', '/admin/review'],
-  advocate: ['/advocate', '/advocate/dashboard']
+  admin: ['/admin'],
+  advocate: ['/advocate', '/leaderboard', '/profile', '/challenges']
 }
+
+// Define routes that are only accessible when not authenticated
+export const AUTH_ROUTES = [
+  '/login',
+  '/signup',
+  '/forgot-password'
+]

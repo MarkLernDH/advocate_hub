@@ -20,12 +20,10 @@ export const createClient = () => createBrowserClient(
     },
     cookieOptions: {
       name: 'advocacy-hub-auth',
-      maxAge: 60 * 60 * 8,
+      lifetime: 60 * 60 * 8,
       domain: process.env.NEXT_PUBLIC_DOMAIN,
       sameSite: 'lax',
       path: '/'
     }
   }
 )
-
-export default createClient()

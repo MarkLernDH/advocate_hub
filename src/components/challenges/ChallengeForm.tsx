@@ -3,11 +3,11 @@
 import React, { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select } from "@/components/ui/select"
-import { SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Button } from "../ui/button"
+import { Input } from "../ui/input"
+import { Textarea } from "../ui/textarea"
+import { Select } from "../ui/select"
+import { SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select'
 import { z } from 'zod'
 import { ChallengeType, ProofType } from '@/lib/types'
 

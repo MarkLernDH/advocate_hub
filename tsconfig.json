@@ -19,14 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./app/*"],
-      "@/components/*": ["./app/components/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/types": ["./types"],
-      "@/types/*": ["./types/*"]
+      "@/*": ["./src/*"]
     },
     "baseUrl": "."
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "**/*.backup/**", "**/*.backup.*"]
 }
