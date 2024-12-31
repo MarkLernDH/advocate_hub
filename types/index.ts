@@ -97,7 +97,7 @@ export interface DbUser {
   email: string
   role: UserRole
   points: number
-  tier: AdvocateLevel
+  level: AdvocateLevel
   created_at: string
   updated_at: string
   is_active: boolean

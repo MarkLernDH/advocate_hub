@@ -12,6 +12,10 @@ interface DailyChallenge {
   timeRemaining: string;
 }
 
+interface DailyBonusProps {
+  userId: string;
+}
+
 const DAILY_CHALLENGES: DailyChallenge[] = [
   {
     id: '1',
@@ -22,37 +26,34 @@ const DAILY_CHALLENGES: DailyChallenge[] = [
   },
   {
     id: '2',
-    title: 'Social Media Spotlight',
-    description: 'Share your favorite feature on LinkedIn or Twitter',
-    bonusPoints: 300,
-    timeRemaining: '15:05'
+    title: 'Complete Your Profile',
+    description: 'Add your job title and company information',
+    bonusPoints: 200,
+    timeRemaining: '23:45'
   }
 ];
 
-export function DailyBonus() {
+export function DailyBonus({ userId }: DailyBonusProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Daily Bonus Challenges</h2>
-      <div className="grid md:grid-cols-2 gap-4">
-        {DAILY_CHALLENGES.map((challenge) => (
-          <Card key={challenge.id} className="p-6 hover:shadow-lg hover:scale-102 transition-all duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-semibold text-lg mb-2">{challenge.title}</h3>
-                <p className="text-gray-600 text-sm">{challenge.description}</p>
-              </div>
-              <Badge variant="secondary" className="animate-pulse">
-                <Star className="w-4 h-4 mr-1" />
-                {challenge.bonusPoints} pts
-              </Badge>
+    <div className="space-y-4">
+      {DAILY_CHALLENGES.map((challenge) => (
+        <Card key={challenge.id} className="p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold">{challenge.title}</h3>
+              <p className="text-sm text-gray-600">{challenge.description}</p>
             </div>
-            <div className="flex items-center text-sm text-gray-500">
-              <Clock className="w-4 h-4 mr-1" />
-              <span>{challenge.timeRemaining} remaining</span>
-            </div>
-          </Card>
-        ))}
-      </div>
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Star className="w-4 h-4" />
+              {challenge.bonusPoints}
+            </Badge>
+          </div>
+          <div className="mt-2 flex items-center text-sm text-gray-500">
+            <Clock className="w-4 h-4 mr-1" />
+            <span>{challenge.timeRemaining} remaining</span>
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }

@@ -1,56 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Card } from "@/components/ui/card"
-import Image from 'next/image'
-import { 
-  DbUser, 
-  Challenge, 
-  ChallengeType, 
-  ProofType, 
-  ChallengeStatus 
-} from '@/types/index'
-import { supabase } from '@/lib/supabaseClient'
-import { useAuth } from '@/app/components/providers/AuthProvider'
-import { DailyBonus } from '@/components/DailyBonus'
+import { Card } from "../../../components/ui/card"
+import { DbUser } from '../../../types'
+import { supabase } from '../../../lib/supabaseClient'
+import { useAuth } from '../../components/providers/AuthProvider'
+import { DailyBonus } from '../../../components/DailyBonus'
 
-const challenges: Challenge[] = [
-  {
-    id: '1',
-    title: 'Share our latest report on LinkedIn',
-    description: 'Help spread the word about our latest industry insights',
-    type: ChallengeType.SOCIAL_SHARE,
-    points: 100,
-    proofRequirements: [ProofType.LINK],
-    imageUrl: '/linkedin.svg',
-    instructions: ['Go to LinkedIn', 'Share our latest report', 'Copy the link to your post'],
-    status: ChallengeStatus.ACTIVE
-  },
-  {
-    id: '2',
-    title: 'Comment on this LinkedIn thread?',
-    description: 'Join the conversation and share your thoughts',
-    type: ChallengeType.SOCIAL_SHARE,
-    points: 200,
-    proofRequirements: [ProofType.LINK],
-    imageUrl: '/linkedin.svg',
-    instructions: ['Find the thread', 'Add your perspective', 'Copy the link to your comment'],
-    status: ChallengeStatus.ACTIVE
-  },
-  {
-    id: '3',
-    title: 'Give us a review on G2!',
-    description: 'Share your experience with our platform',
-    type: ChallengeType.G2_REVIEW,
-    points: 200,
-    proofRequirements: [ProofType.LINK],
-    imageUrl: '/g2.svg',
-    instructions: ['Visit our G2 page', 'Write an honest review', 'Copy the link to your review'],
-    status: ChallengeStatus.ACTIVE
-  }
-]
-
-export default function Dashboard() {
+export default function AdvocateDashboard() {
   const { user, loading } = useAuth()
   const [dbUser, setDbUser] = useState<DbUser | null>(null)
   const [userLoading, setUserLoading] = useState(true)
@@ -79,79 +36,68 @@ export default function Dashboard() {
   }, [user])
 
   if (loading || userLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    )
   }
 
-  return (
-    <main className="flex min-h-screen flex-col">
-      {/* Welcome Banner */}
-      <div className="max-w-7xl mx-auto w-full px-4 py-8">
-        <div className="bg-navy-900 text-white p-8 rounded-lg">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">
-              Welcome Back, <span className="text-emerald-400">{dbUser?.email?.split('@')[0]}</span>
-            </h1>
-            <div className="flex gap-8">
-              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
-                <div className="text-gray-300 mb-2">Advocacy Level</div>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">{dbUser?.tier || 'BRONZE'}</div>
-                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
-                  View Benefits <span className="ml-1">→</span>
-                </button>
-              </div>
-              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
-                <div className="text-gray-300 mb-2">Total Points</div>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">{dbUser?.points?.toLocaleString() || '0'}</div>
-                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
-                  View History <span className="ml-1">→</span>
-                </button>
-              </div>
-              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
-                <div className="text-gray-300 mb-2">Unlocked Rewards</div>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">2</div>
-                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
-                  Redeem <span className="ml-1">→</span>
-                </button>
-              </div>
-            </div>
+  if (!dbUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Error Loading Dashboard
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Unable to load user data. Please try refreshing the page.
+            </p>
           </div>
         </div>
       </div>
+    )
+  }
 
-      {/* Daily Bonus Section */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
-        <DailyBonus />
-      </section>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Advocate Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Profile</h2>
+          <div className="space-y-2">
+            <p><span className="font-medium">Email:</span> {dbUser.email}</p>
+            <p><span className="font-medium">Role:</span> {dbUser.role}</p>
+            <p><span className="font-medium">Points:</span> {dbUser.points}</p>
+            <p><span className="font-medium">Level:</span> {dbUser.level}</p>
+          </div>
+        </Card>
 
-      {/* Challenges Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-semibold mb-6">Recommended for you</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {challenges.map((challenge) => (
-            <Card key={challenge.id} className="p-6">
-              <div className="flex flex-col h-full">
-                <Image
-                  src={challenge.imageUrl || '/default-challenge.svg'}
-                  alt={challenge.title}
-                  width={40}
-                  height={40}
-                  className="mb-4"
-                />
-                <h2 className="text-xl font-semibold mb-3">{challenge.title}</h2>
-                <p className="text-gray-600 mb-auto">{challenge.description}</p>
-                <div className="flex justify-between items-center w-full mt-6">
-                  <span className="text-sm font-medium text-blue-600">
-                    {challenge.points} points
-                  </span>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                    Start Challenge
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Daily Bonus</h2>
+          <DailyBonus userId={dbUser.id} />
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <div className="space-y-4">
+            <button
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+              onClick={() => {/* Add action */}}
+            >
+              View Challenges
+            </button>
+            <button
+              className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+              onClick={() => {/* Add action */}}
+            >
+              Submit Solution
+            </button>
+          </div>
+        </Card>
       </div>
-    </main>
+    </div>
   )
 }

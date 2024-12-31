@@ -33,7 +33,7 @@ export async function getUser(userId: string): Promise<DbUser | null> {
     const newUserData: Database['public']['Tables']['users']['Insert'] = {
         id: userId,
         points: 0,
-        tier: AdvocateLevel.BRONZE,
+        level: AdvocateLevel.BRONZE, // Default new users to bronze tier: AdvocateLevel.BRONZE,
         is_active: true,
         email: '',
         role: UserRole.ADVOCATE // Default new users to advocate role

@@ -5,6 +5,7 @@ import { Card } from "../../../components/ui/card"
 import { DbUser } from '../../../types'
 import { supabase } from '../../../lib/supabaseClient'
 import { useAuth } from '../../components/providers/AuthProvider'
+import { DailyBonus } from '../../../components/DailyBonus'
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth()
@@ -35,72 +36,68 @@ export default function AdminDashboard() {
   }, [user])
 
   if (loading || userLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    )
   }
 
-  return (
-    <main className="flex min-h-screen flex-col">
-      {/* Welcome Banner */}
-      <div className="max-w-7xl mx-auto w-full px-4 py-8">
-        <div className="bg-navy-900 text-white p-8 rounded-lg">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">
-              Welcome Back, <span className="text-emerald-400">{dbUser?.email?.split('@')[0]}</span>
-            </h1>
-            <div className="flex gap-8">
-              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
-                <div className="text-gray-300 mb-2">Total Users</div>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">245</div>
-                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
-                  View Details <span className="ml-1">→</span>
-                </button>
-              </div>
-              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
-                <div className="text-gray-300 mb-2">Active Challenges</div>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">12</div>
-                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
-                  Manage <span className="ml-1">→</span>
-                </button>
-              </div>
-              <div className="bg-[#152c5b] p-6 rounded-lg text-center min-w-[240px]">
-                <div className="text-gray-300 mb-2">Pending Reviews</div>
-                <div className="text-4xl font-bold text-emerald-400 mb-2">5</div>
-                <button className="text-emerald-400 hover:text-emerald-300 text-sm flex items-center justify-center w-full">
-                  Review <span className="ml-1">→</span>
-                </button>
-              </div>
-            </div>
+  if (!dbUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Error Loading Dashboard
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Unable to load user data. Please try refreshing the page.
+            </p>
           </div>
         </div>
       </div>
+    )
+  }
 
-      {/* Quick Actions */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-semibold mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6">
-            <h3 className="font-semibold text-lg mb-2">Create Challenge</h3>
-            <p className="text-gray-600 mb-4">Create a new advocacy challenge for users</p>
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              Create New
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Profile</h2>
+          <div className="space-y-2">
+            <p><span className="font-medium">Email:</span> {dbUser.email}</p>
+            <p><span className="font-medium">Role:</span> {dbUser.role}</p>
+            <p><span className="font-medium">Points:</span> {dbUser.points}</p>
+            <p><span className="font-medium">Level:</span> {dbUser.level}</p>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Daily Bonus</h2>
+          <DailyBonus userId={dbUser.id} />
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <div className="space-y-4">
+            <button
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+              onClick={() => {/* Add action */}}
+            >
+              Review Submissions
             </button>
-          </Card>
-          <Card className="p-6">
-            <h3 className="font-semibold text-lg mb-2">Review Submissions</h3>
-            <p className="text-gray-600 mb-4">Review and approve pending submissions</p>
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              View Queue
+            <button
+              className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+              onClick={() => {/* Add action */}}
+            >
+              Create Challenge
             </button>
-          </Card>
-          <Card className="p-6">
-            <h3 className="font-semibold text-lg mb-2">User Management</h3>
-            <p className="text-gray-600 mb-4">Manage user accounts and permissions</p>
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              Manage Users
-            </button>
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
-    </main>
+    </div>
   )
 }
