@@ -1,11 +1,29 @@
-/// <reference types="node" />
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { UserRole } from './types'
-import { SUPABASE_CONFIG } from './src/lib/supabase/config'
+import { paths, isPublicPath, createUrl } from '@/lib/navigation'
+import { errorCodes, createErrorUrl } from '@/lib/errors'
+import { 
+  isAuthorizedForPath, 
+  isValidRedirectPath, 
+  getDefaultRedirect 
+} from '@/lib/auth'
+import { logMiddleware, addDebugHeaders, isDebug } from '@/lib/debug'
 
 export async function middleware(request: NextRequest) {
+  const redirectCount = parseInt(request.headers.get('x-redirect-count') || '0')
+  if (redirectCount > 5) {
+    logMiddleware(request, {
+      action: 'Too many redirects',
+      session: null,
+      profile: null,
+      redirectCount,
+      error: errorCodes.TOO_MANY_REDIRECTS
+    })
+    return NextResponse.redirect(createErrorUrl('TOO_MANY_REDIRECTS', request.url))
+  }
+
   // Static files and API routes bypass middleware
   if (request.nextUrl.pathname.startsWith('/_next') ||
       request.nextUrl.pathname.startsWith('/api') ||
@@ -13,12 +31,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Create response and Supabase client
   const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
+
+  // Increment redirect count
+  response.headers.set('x-redirect-count', (redirectCount + 1).toString())
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,62 +66,106 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Get session
-  const { data: { session } } = await supabase.auth.getSession()
-
-  // Special paths that should bypass middleware
-  const isAuthCallback = request.nextUrl.pathname === '/auth/callback'
-  const isLoginPage = request.nextUrl.pathname === '/auth/login'
-  const isLogoutPage = request.nextUrl.pathname === '/auth/logout'
-
-  // Always allow auth callback and logout
-  if (isAuthCallback || isLogoutPage) {
+  // Allow public routes
+  if (isPublicPath(request.nextUrl.pathname)) {
+    logMiddleware(request, {
+      action: 'Public route access',
+      session: null,
+      profile: null,
+      redirectCount
+    })
     return response
+  }
+
+  // Get session and profile in parallel
+  const [sessionResult, profileResult] = await Promise.all([
+    supabase.auth.getSession(),
+    supabase.from('profiles').select('role').single()
+  ])
+
+  const session = sessionResult.data.session
+  const profile = profileResult.data
+
+  // Add debug information
+  addDebugHeaders(response.headers, {
+    role: profile?.role,
+    pathType: isPublicPath(request.nextUrl.pathname) ? 'public' : 'protected',
+    redirectCount
+  })
+
+  // Handle login page separately
+  if (request.nextUrl.pathname === paths.auth.login) {
+    if (!session) {
+      logMiddleware(request, {
+        action: 'Login page access - no session',
+        session,
+        profile,
+        redirectCount
+      })
+      return response
+    }
+    
+    const redirectTo = request.nextUrl.searchParams.get('redirectTo')
+    const isValidRedirect = isValidRedirectPath(redirectTo, profile?.role as UserRole)
+    const targetPath = isValidRedirect 
+      ? redirectTo! 
+      : getDefaultRedirect(profile?.role as UserRole)
+    
+    logMiddleware(request, {
+      action: 'Login redirect',
+      session,
+      profile,
+      redirectCount,
+      redirectTo: targetPath
+    })
+
+    return NextResponse.redirect(createUrl(targetPath, request.url))
   }
 
   // Handle unauthenticated users
   if (!session) {
-    // Allow access to login page
-    if (isLoginPage) {
-      return response
+    logMiddleware(request, {
+      action: 'Unauthenticated access',
+      session: null,
+      profile: null,
+      redirectCount
+    })
+    const loginUrl = createUrl(paths.auth.login, request.url)
+    if (request.nextUrl.pathname !== '/') {
+      loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     }
-
-    // Redirect other routes to login
-    const redirectUrl = new URL('/auth/login', request.url)
-    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // From this point on, we know the user is authenticated
-  
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
-    .single()
-
-  const userRole = profile?.role || 'ADVOCATE'
-
-  // Handle login page access for authenticated users
-  if (isLoginPage) {
-    const redirectTo = request.nextUrl.searchParams.get('redirectTo')
-    const dashboardPath = userRole === 'ADMIN' 
-      ? SUPABASE_CONFIG.routes.admin.dashboard
-      : SUPABASE_CONFIG.routes.advocate.dashboard
-    
-    return NextResponse.redirect(
-      new URL(redirectTo || dashboardPath, request.url)
-    )
+  // Handle missing profile
+  if (!profile) {
+    logMiddleware(request, {
+      action: 'Missing profile',
+      session,
+      profile: null,
+      redirectCount,
+      error: errorCodes.NO_PROFILE
+    })
+    return NextResponse.redirect(createErrorUrl('NO_PROFILE', request.url))
   }
 
-  // Protect admin routes
-  if (request.nextUrl.pathname.startsWith('/admin') && userRole !== 'ADMIN') {
-    return NextResponse.redirect(
-      new URL(SUPABASE_CONFIG.routes.advocate.dashboard, request.url)
-    )
+  // Check path authorization
+  if (!isAuthorizedForPath(profile.role as UserRole, request.nextUrl.pathname)) {
+    logMiddleware(request, {
+      action: 'Unauthorized path access',
+      session,
+      profile,
+      redirectCount,
+      error: errorCodes.INVALID_ROLE
+    })
+    return NextResponse.redirect(createErrorUrl('INVALID_ROLE', request.url))
   }
 
-  // Allow all other requests
   return response
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 }
