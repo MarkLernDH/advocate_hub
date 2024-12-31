@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient'
-import { DbUser, Database } from '../types'
+import { DbUser, Database } from '../types/index'
 
 export async function getCurrentUser(): Promise<DbUser | null> {
   const { data: { user } } = await supabase.auth.getUser()

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabaseClient'
-import { DbUser, AdvocateLevel, UserRole, Database } from '../../../types'
+import { DbUser, AdvocateLevel, UserRole, Database } from '../../../types/index'
 import LoadingSpinner from '../shared/LoadingSpinner'
 
 interface AuthContextType {

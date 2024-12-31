@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useAuth } from '../providers/AuthProvider'
+import { UserRole } from '@/types'
 
 export default function AuthNav() {
   const { user, signOut } = useAuth()
@@ -26,11 +27,21 @@ export default function AuthNav() {
   }
 
   return (
-    <button
-      onClick={() => signOut()}
-      className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-    >
-      Sign Out
-    </button>
+    <div className="flex items-center space-x-4">
+      {user.role === UserRole.ADMIN && (
+        <Link 
+          href="/admin/dashboard" 
+          className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
+        >
+          Admin Dashboard
+        </Link>
+      )}
+      <button
+        onClick={() => signOut()}
+        className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+      >
+        Sign Out
+      </button>
+    </div>
   )
 }

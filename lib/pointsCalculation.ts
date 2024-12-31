@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient'
-import { DbUser, AdvocateLevel, Database } from '../types'
+import { DbUser, AdvocateLevel, Database } from '../types/index'
 
 export function calculateNextTier(points: number): AdvocateLevel {
   if (points >= 10000) return AdvocateLevel.PLATINUM

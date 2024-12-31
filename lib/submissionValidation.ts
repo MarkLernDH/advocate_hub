@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient'
-import { DbUserChallenge, SubmissionType, SubmissionStatus } from '../types'
+import { DbUserChallenge, SubmissionType, SubmissionStatus } from '../types/'
 
 export async function validateSubmission(
   userId: string,

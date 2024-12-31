@@ -1,5 +1,5 @@
 import { Dialog } from '@/components/ui/dialog';
-import { Challenge } from '@/types';
+import { Challenge } from '@/types/index';
 import { Button } from '@/components/ui/button';
 
 interface ChallengeModalProps {

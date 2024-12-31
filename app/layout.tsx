@@ -3,8 +3,6 @@ import { Inter } from 'next/font/google'
 import { AuthProvider } from './components/providers/AuthProvider'
 import Link from 'next/link'
 import AuthNav from './components/auth/AuthNav'
-import { useUser } from '@/lib/hooks'
-import { UserRole } from '@/types'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,8 +16,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user } = useUser()
-
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -52,14 +48,6 @@ export default function RootLayout({
                     >
                       Leaderboard
                     </Link>
-                    {user?.role === UserRole.ADMIN && (
-                      <Link 
-                        href="/admin/dashboard" 
-                        className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
-                      >
-                        Admin Dashboard
-                      </Link>
-                    )}
                     <AuthNav />
                   </div>
                 </div>

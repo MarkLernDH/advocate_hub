@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { SubmissionStatus, ProofType } from '../../../../types'
+import { SubmissionStatus, ProofType } from '../../../../types/index'
 import { validateLinkSubmission } from '../../../../lib/validation'
 import { supabase } from '../../../../lib/supabaseClient'
 

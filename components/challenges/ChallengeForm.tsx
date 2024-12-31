@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { ChallengeType, ProofType } from '@/types';
+import { ChallengeType, ProofType } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

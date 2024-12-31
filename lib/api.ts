@@ -9,7 +9,7 @@ import {
   AdvocateLevel,
   UserRole,
   Database
-} from '../types'
+} from '../types/index'
 
 // User Operations
 export async function getUser(userId: string): Promise<DbUser | null> {
