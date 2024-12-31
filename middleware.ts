@@ -5,6 +5,15 @@ import type { NextRequest } from 'next/server'
 import { UserRole } from './types'
 
 export async function middleware(request: NextRequest) {
+  // Skip middleware for static files and api routes
+  if (
+    request.nextUrl.pathname.startsWith('/_next') ||
+    request.nextUrl.pathname.startsWith('/api') ||
+    request.nextUrl.pathname.startsWith('/static')
+  ) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -39,20 +48,11 @@ export async function middleware(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession()
 
-  // If not logged in and trying to access protected routes, redirect to login
-  if (!session && (
-    request.nextUrl.pathname.startsWith('/admin') ||
-    request.nextUrl.pathname.startsWith('/advocate')
-  )) {
-    const redirectUrl = new URL('/auth/login', request.url)
-    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // Skip auth checks for auth-related routes except /auth/callback
-  if (request.nextUrl.pathname.startsWith('/auth') && 
+  // Skip auth check for public routes
+  if (request.nextUrl.pathname === '/' || 
+      request.nextUrl.pathname.startsWith('/auth') && 
       !request.nextUrl.pathname.startsWith('/auth/callback')) {
-    // If logged in and trying to access login/signup pages, redirect to appropriate dashboard
+    // If logged in on public routes, redirect to appropriate dashboard
     if (session) {
       const { data: user } = await supabase
         .from('users')
@@ -68,26 +68,34 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // If logged in, fetch user role
-  if (session) {
-    const { data: user } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-
-    // If user is not found or has no role, redirect to error page
-    if (!user?.role) {
-      return NextResponse.redirect(new URL('/auth/error', request.url))
+  // Require auth for protected routes
+  if (!session) {
+    const redirectUrl = new URL('/auth/login', request.url)
+    if (request.nextUrl.pathname !== '/auth/login') {
+      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     }
+    return NextResponse.redirect(redirectUrl)
+  }
 
-    // If at root or accessing wrong role's routes, redirect to appropriate dashboard
-    if (request.nextUrl.pathname === '/' || 
-        (request.nextUrl.pathname.startsWith('/admin') && user.role !== UserRole.ADMIN) ||
-        (request.nextUrl.pathname.startsWith('/advocate') && user.role !== UserRole.ADVOCATE)) {
-      const targetPath = user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
-      return NextResponse.redirect(new URL(targetPath, request.url))
-    }
+  // Check user role for protected routes
+  const { data: user } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!user?.role) {
+    return NextResponse.redirect(new URL('/auth/error', request.url))
+  }
+
+  // Handle role-based access
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isAdvocateRoute = request.nextUrl.pathname.startsWith('/advocate')
+
+  if ((isAdminRoute && user.role !== UserRole.ADMIN) ||
+      (isAdvocateRoute && user.role !== UserRole.ADVOCATE)) {
+    const targetPath = user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
+    return NextResponse.redirect(new URL(targetPath, request.url))
   }
 
   return response
