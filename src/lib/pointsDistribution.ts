@@ -14,7 +14,7 @@ export async function awardPoints(user: DbUser, challenge: DbChallenge, status: 
     await sendEmail(
       user.email,
       'Points Awarded!',
-      pointsAwardedEmail(user.email, pointsAwarded, challenge.title)
+      pointsAwardedEmail(user.full_name || user.email, pointsAwarded, challenge.title)
     );
 
     return pointsAwarded;

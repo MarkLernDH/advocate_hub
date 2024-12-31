@@ -2,10 +2,10 @@ import { Database as DatabaseGenerated } from './supabase'
 
 export type Database = DatabaseGenerated
 
-export type DbUser = Database['public']['Tables']['users']['Row']
+// Update type to use profiles instead of users
+export type DbUser = Database['public']['Tables']['profiles']['Row']
 export type DbChallenge = Database['public']['Tables']['challenges']['Row']
 export type DbUserChallenge = Database['public']['Tables']['user_challenges']['Row']
-export type DbAdvocate = Database['public']['Tables']['advocates']['Row']
 
 export enum SubmissionType {
   TEXT = 'text',

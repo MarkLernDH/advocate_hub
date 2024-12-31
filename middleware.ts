@@ -46,10 +46,32 @@ export async function middleware(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession()
   
-  // Define public routes
-  const isPublicRoute = request.nextUrl.pathname === '/' || 
-    (request.nextUrl.pathname.startsWith('/auth') && 
-     !request.nextUrl.pathname.startsWith('/auth/callback'))
+  // Define public routes - remove root path from public routes
+  const isPublicRoute = request.nextUrl.pathname.startsWith('/auth') && 
+    !request.nextUrl.pathname.startsWith('/auth/callback')
+
+  // If the user is not signed in and the route is not public, redirect to login
+  if (!session && !isPublicRoute) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/auth/login'
+    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  // If user is signed in and trying to access login page, redirect to appropriate dashboard
+  if (session && request.nextUrl.pathname === '/auth/login') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+
+    const redirectPath = profile?.role === 'ADMIN' 
+      ? '/admin/dashboard'
+      : '/advocate/dashboard'
+
+    return NextResponse.redirect(new URL(redirectPath, request.url))
+  }
 
   // Get user role once if session exists
   let userRole = null
@@ -69,15 +91,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(targetPath, request.url))
     }
     return response
-  }
-
-  // Handle unauthenticated users
-  if (!session) {
-    const redirectUrl = new URL('/auth/login', request.url)
-    if (request.nextUrl.pathname !== '/auth/login') {
-      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-    }
-    return NextResponse.redirect(redirectUrl)
   }
 
   // Handle missing role
