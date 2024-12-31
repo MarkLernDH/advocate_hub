@@ -19,7 +19,7 @@ export default async function LoginPage({
       .eq('id', session.user.id)
       .single()
 
-    const redirectPath = profile?.role === 'admin' 
+    const redirectPath = profile?.role === 'ADMIN' 
       ? SUPABASE_CONFIG.routes.admin.dashboard
       : SUPABASE_CONFIG.routes.advocate.dashboard
 

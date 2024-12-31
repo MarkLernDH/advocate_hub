@@ -71,13 +71,76 @@ npm run dev
 
 ## Database Setup
 
-Create a new Supabase project
-Run the setup SQL scripts from /scripts
-Set up database policies for security
+1. Create a new Supabase project
+2. Install the Supabase CLI:
+   ```bash
+   brew install supabase/tap/supabase
+   ```
+3. Run migrations in order:
+   ```bash
+   cd supabase/migrations
+   # Run these in order:
+   supabase db push 20231231_core_tables.sql
+   supabase db push 20231231_review_system.sql
+   supabase db push 20231231_cleanup_and_consolidate.sql
+   ```
+4. Generate TypeScript types:
+   ```bash
+   supabase gen types typescript --project-id your-project-id > src/types/supabase.ts
+   ```
 
-```sql
-# Example policy setup included in /scripts/setup.sql
-```
+## Database Schema
+
+Key tables:
+
+- **profiles**: User profiles and settings
+  - `id`: UUID (references auth.users)
+  - `email`: TEXT
+  - `full_name`: TEXT
+  - `role`: TEXT ('ADMIN' or 'ADVOCATE')
+  - `total_points`: INTEGER
+  - `is_active`: BOOLEAN
+  - `created_at`: TIMESTAMPTZ
+  - `updated_at`: TIMESTAMPTZ
+
+- **challenges**: Available challenges
+  - `id`: UUID
+  - `title`: TEXT
+  - `description`: TEXT
+  - `points`: INTEGER
+  - `requirements`: TEXT[]
+  - `is_active`: BOOLEAN
+  - `created_at`: TIMESTAMPTZ
+  - `updated_at`: TIMESTAMPTZ
+  - `created_by`: UUID (references profiles)
+
+- **submissions**: Challenge submissions
+  - `id`: UUID
+  - `challenge_id`: UUID (references challenges)
+  - `advocate_id`: UUID (references profiles)
+  - `content`: TEXT
+  - `attachments`: TEXT[]
+  - `status`: TEXT ('pending', 'approved', 'rejected')
+  - `created_at`: TIMESTAMPTZ
+  - `updated_at`: TIMESTAMPTZ
+
+- **points_history**: Points transaction history
+  - `id`: UUID
+  - `advocate_id`: UUID (references profiles)
+  - `points`: INTEGER
+  - `reason`: TEXT
+  - `created_at`: TIMESTAMPTZ
+
+- **reviews**: Submission reviews
+  - `id`: UUID
+  - `submission_id`: UUID (references submissions)
+  - `reviewer_id`: UUID (references profiles)
+  - `status`: review_status
+  - `quality`: submission_quality
+  - `feedback`: TEXT
+  - `points_awarded`: INTEGER
+  - `created_at`: TIMESTAMPTZ
+  - `updated_at`: TIMESTAMPTZ
 
 ## Authentication Flow
 
@@ -92,16 +155,6 @@ Follow the existing component structure
 Add proper types for all props and state
 Use server components where possible
 Implement proper error handling
-
-## Database Schema
-
-Key tables:
-
-profiles: User profiles and points
-challenges: Available challenges
-submissions: Challenge submissions
-reviews: Submission reviews
-points_history: Point transaction log
 
 ## Contributing
 
