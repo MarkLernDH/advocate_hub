@@ -3,9 +3,9 @@
 import LoginForm from '../../components/auth/LoginForm'
 import { useAuth } from '../../components/providers/AuthProvider'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -26,5 +26,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50">
       <LoginForm />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   )
 }

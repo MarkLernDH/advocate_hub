@@ -1,28 +1,49 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '../providers/AuthProvider'
 import { useRouter } from 'next/navigation'
+import { supabase } from '../../../lib/supabaseClient'
 
 export default function SignUpForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
-  const { signUp } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
     if (password !== confirmPassword) {
       setError('Passwords do not match')
+      setIsLoading(false)
       return
     }
+
     try {
-      await signUp(email, password)
-      router.push('/dashboard')
-    } catch (error) {
-      setError('Error creating account')
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+      if (error) throw error
+
+      // Clear form
+      setEmail('')
+      setPassword('')
+      setConfirmPassword('')
+      
+      // Show success message
+      setError('Check your email for the confirmation link')
+    } catch (error: any) {
+      setError(error.message || 'An error occurred during sign up')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -46,6 +67,7 @@ export default function SignUpForm() {
                 type="email"
                 autoComplete="email"
                 required
+                disabled={isLoading}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
@@ -62,6 +84,7 @@ export default function SignUpForm() {
                 type="password"
                 autoComplete="new-password"
                 required
+                disabled={isLoading}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
@@ -78,6 +101,7 @@ export default function SignUpForm() {
                 type="password"
                 autoComplete="new-password"
                 required
+                disabled={isLoading}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm Password"
                 value={confirmPassword}
@@ -87,15 +111,28 @@ export default function SignUpForm() {
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
+            <div className={`rounded-md p-4 ${error.includes('Check your email') ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className={`text-sm font-medium ${error.includes('Check your email') ? 'text-green-800' : 'text-red-800'}`}>
+                    {error}
+                  </h3>
+                </div>
+              </div>
+            </div>
           )}
 
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isLoading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                isLoading
+                  ? 'bg-indigo-400'
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              }`}
             >
-              Sign up
+              {isLoading ? 'Creating account...' : 'Create account'}
             </button>
           </div>
         </form>
