@@ -1,7 +1,7 @@
 import { UserRole } from '@/types'
 
 export const paths = {
-  public: ['/auth/callback', '/auth/logout', '/auth/error'] as const,
+  public: ['/', '/auth/login', '/auth/callback', '/auth/error', '/auth/logout'] as const,
   auth: {
     login: '/auth/login',
     error: '/auth/error',

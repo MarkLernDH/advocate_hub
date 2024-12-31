@@ -11,7 +11,22 @@ import {
 } from '@/lib/auth'
 import { logMiddleware, addDebugHeaders, isDebug } from '@/lib/debug'
 
+// Helper to check if request is for static assets
+function isStaticAsset(pathname: string): boolean {
+  return pathname.startsWith('/_next') || 
+         pathname.startsWith('/static') || 
+         pathname.startsWith('/api') ||
+         pathname.includes('.') // Catches files like favicon.ico, manifest.json, etc.
+}
+
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Always allow static assets and API routes
+  if (isStaticAsset(pathname)) {
+    return NextResponse.next()
+  }
+
   const redirectCount = parseInt(request.headers.get('x-redirect-count') || '0')
   if (redirectCount > 5) {
     logMiddleware(request, {
@@ -24,13 +39,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(createErrorUrl('TOO_MANY_REDIRECTS', request.url))
   }
 
-  // Static files and API routes bypass middleware
-  if (request.nextUrl.pathname.startsWith('/_next') ||
-      request.nextUrl.pathname.startsWith('/api') ||
-      request.nextUrl.pathname.startsWith('/static')) {
-    return NextResponse.next()
-  }
-
   const response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -40,6 +48,7 @@ export async function middleware(request: NextRequest) {
   // Increment redirect count
   response.headers.set('x-redirect-count', (redirectCount + 1).toString())
 
+  // Create Supabase client with proper cookie handling
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_KEY!,
@@ -53,6 +62,9 @@ export async function middleware(request: NextRequest) {
             name,
             value,
             ...options,
+            path: '/',
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
           })
         },
         remove(name: string, options: any) {
@@ -60,19 +72,22 @@ export async function middleware(request: NextRequest) {
             name,
             value: '',
             ...options,
+            path: '/',
+            maxAge: 0
           })
         },
       },
     }
   )
 
-  // Allow public routes
-  if (isPublicPath(request.nextUrl.pathname)) {
+  // Allow public routes without any auth checks
+  if (isPublicPath(pathname)) {
     logMiddleware(request, {
       action: 'Public route access',
       session: null,
       profile: null,
-      redirectCount
+      redirectCount,
+      path: pathname
     })
     return response
   }
@@ -89,12 +104,12 @@ export async function middleware(request: NextRequest) {
   // Add debug information
   addDebugHeaders(response.headers, {
     role: profile?.role,
-    pathType: isPublicPath(request.nextUrl.pathname) ? 'public' : 'protected',
+    pathType: isPublicPath(pathname) ? 'public' : 'protected',
     redirectCount
   })
 
-  // Handle login page separately
-  if (request.nextUrl.pathname === paths.auth.login) {
+  // If we're already on the login page, don't redirect again
+  if (pathname === paths.auth.login) {
     if (!session) {
       logMiddleware(request, {
         action: 'Login page access - no session',
@@ -105,14 +120,18 @@ export async function middleware(request: NextRequest) {
       return response
     }
     
+    // If authenticated on login page, redirect to appropriate dashboard
     const redirectTo = request.nextUrl.searchParams.get('redirectTo')
-    const isValidRedirect = isValidRedirectPath(redirectTo, profile?.role as UserRole)
-    const targetPath = isValidRedirect 
-      ? redirectTo! 
-      : getDefaultRedirect(profile?.role as UserRole)
+    const isValidRedirect = redirectTo && isValidRedirectPath(redirectTo, profile?.role as UserRole)
+    const targetPath = isValidRedirect ? redirectTo : getDefaultRedirect(profile?.role as UserRole)
     
+    // Prevent redirect loops
+    if (pathname === targetPath) {
+      return response
+    }
+
     logMiddleware(request, {
-      action: 'Login redirect',
+      action: 'Login redirect - authenticated user',
       session,
       profile,
       redirectCount,
@@ -124,15 +143,22 @@ export async function middleware(request: NextRequest) {
 
   // Handle unauthenticated users
   if (!session) {
+    // Prevent redirect loops
+    if (pathname === paths.auth.login) {
+      return response
+    }
+
     logMiddleware(request, {
       action: 'Unauthenticated access',
       session: null,
       profile: null,
-      redirectCount
+      redirectCount,
+      path: pathname
     })
+
     const loginUrl = createUrl(paths.auth.login, request.url)
-    if (request.nextUrl.pathname !== '/') {
-      loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+    if (pathname !== '/') {
+      loginUrl.searchParams.set('redirectTo', pathname)
     }
     return NextResponse.redirect(loginUrl)
   }
@@ -150,7 +176,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check path authorization
-  if (!isAuthorizedForPath(profile.role as UserRole, request.nextUrl.pathname)) {
+  if (!isAuthorizedForPath(profile.role as UserRole, pathname)) {
     logMiddleware(request, {
       action: 'Unauthorized path access',
       session,
