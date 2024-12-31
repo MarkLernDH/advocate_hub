@@ -25,8 +25,10 @@ export default function LoginForm() {
       // Clear form
       setEmail('')
       setPassword('')
-      // Navigation will be handled by the login page component
+      // Add a small delay to ensure the auth state is updated
+      await new Promise(resolve => setTimeout(resolve, 500))
     } catch (error: any) {
+      console.error('Login error:', error)
       setError(error.message || 'Invalid email or password')
     } finally {
       setIsLoading(false)
