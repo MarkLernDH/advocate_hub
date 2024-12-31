@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '../providers/AuthProvider'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Provider } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabaseClient'
 
@@ -13,6 +13,9 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams?.get('redirectTo') || '/'
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -22,14 +25,15 @@ export default function LoginForm() {
       // Clear form
       setEmail('')
       setPassword('')
-      // Navigate immediately - the AuthProvider will handle redirecting if not authenticated
-      router.replace('/')
+      // Navigate to the redirect URL
+      router.replace(redirectTo)
     } catch (error: any) {
       setError(error.message || 'Invalid email or password')
     } finally {
       setIsLoading(false)
     }
   }
+
   const handleOAuthSignIn = async (provider: Provider) => {
     setError('')
     setIsLoading(true)
@@ -37,7 +41,7 @@ export default function LoginForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
           skipBrowserRedirect: false
         }
       })
@@ -102,7 +106,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>

@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/admin') ||
     request.nextUrl.pathname.startsWith('/advocate')
   )) {
-    const redirectUrl = new URL('/auth/signin', request.url)
+    const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
