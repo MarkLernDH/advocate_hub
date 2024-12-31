@@ -2,8 +2,8 @@ import { Database as DatabaseGenerated } from './supabase'
 
 export type Database = DatabaseGenerated
 
-// Update type to use profiles instead of users
-export type DbUser = Database['public']['Tables']['profiles']['Row']
+// Temporarily use users table until we can regenerate types
+export type DbUser = Database['public']['Tables']['users']['Row']
 export type DbChallenge = Database['public']['Tables']['challenges']['Row']
 export type DbUserChallenge = Database['public']['Tables']['user_challenges']['Row']
 
@@ -34,7 +34,6 @@ export enum AdvocateLevel {
 }
 
 export enum UserRole {
-  ADVOCATE = 'advocate',
-  ADMIN = 'admin',
-  MODERATOR = 'moderator'
+  ADMIN = 'ADMIN',
+  ADVOCATE = 'ADVOCATE'
 }

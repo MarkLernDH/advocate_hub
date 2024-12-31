@@ -2,8 +2,7 @@ import supabase from './supabase/client'
 import { 
   DbUser, 
   DbChallenge, 
-  DbUserChallenge, 
-  DbAdvocate,
+  DbUserChallenge,
   SubmissionStatus,
   ChallengeStatus,
   AdvocateLevel,
@@ -15,49 +14,41 @@ import {
 export async function getUser(userId: string): Promise<DbUser | null> {
   try {
     const { data: existingUser, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle()
 
     if (fetchError) {
       console.error('Error fetching user:', fetchError)
-      throw fetchError
-    }
-
-    if (existingUser) {
-      return existingUser as unknown as Database['public']['Tables']['users']['Row']
-    }
-
-    // If user doesn't exist, create a new one
-    const newUserData: Database['public']['Tables']['users']['Insert'] = {
-        id: userId,
-        points: 0,
-        level: AdvocateLevel.BRONZE, // Default new users to bronze tier: AdvocateLevel.BRONZE,
-        is_active: true,
-        email: '',
-        role: UserRole.ADVOCATE // Default new users to advocate role
-    }
-
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert([newUserData])
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Error creating user:', insertError)
-      throw insertError
-    }
-
-    if (!newUser) {
       return null
     }
 
-    return newUser as unknown as Database['public']['Tables']['users']['Row']
+    return existingUser
   } catch (error) {
     console.error('Error in getUser:', error)
-    throw error
+    return null
+  }
+}
+
+export async function updateUser(userId: string, updates: Partial<DbUser>): Promise<DbUser | null> {
+  try {
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Error updating user:', updateError)
+      return null
+    }
+
+    return updatedUser
+  } catch (error) {
+    console.error('Error in updateUser:', error)
+    return null
   }
 }
 
@@ -67,49 +58,66 @@ export async function getActiveChallenges(): Promise<DbChallenge[]> {
     .from('challenges')
     .select('*')
     .eq('is_active', true)
+    .order('created_at', { ascending: false })
 
-  if (error) throw error
-  
-  return (data || []) as unknown as Database['public']['Tables']['challenges']['Row'][]
+  if (error) {
+    console.error('Error fetching challenges:', error)
+    return []
+  }
+
+  return data || []
 }
 
 export async function getChallengeById(challengeId: string): Promise<DbChallenge | null> {
   const { data, error } = await supabase
     .from('challenges')
     .select('*')
-    .eq('ChallengeId', challengeId)
+    .eq('id', challengeId)
     .single()
 
-  if (error) throw error
-  if (!data) return null
-
-  return data as unknown as Database['public']['Tables']['challenges']['Row']
-}
-
-async function getUserChallenges(userId: string): Promise<(DbUserChallenge & { challenge: DbChallenge })[]> {
-    const { data, error } = await supabase
-      .from('user_challenges')
-      .select('*, challenge:challenges(*)')
-      .eq('user_id', userId)
-  
-    if (error) throw error
-    
-    return (data || []).map((item: { challenge: unknown }) => ({
-      ...(item as unknown as Database['public']['Tables']['user_challenges']['Row']),
-      challenge: item.challenge as unknown as Database['public']['Tables']['challenges']['Row']
-    }))
+  if (error) {
+    console.error('Error fetching challenge:', error)
+    return null
   }
 
-// Advocate Operations
-export async function getAdvocateProfile(userId: string): Promise<DbAdvocate | null> {
+  return data
+}
+
+export async function getUserChallenges(userId: string): Promise<(DbUserChallenge & { challenge: DbChallenge })[]> {
   const { data, error } = await supabase
-    .from('advocates')
-    .select('*')
-    .eq('AdvocateId', userId)
-    .single()
+    .from('user_challenges')
+    .select(`
+      *,
+      challenge:challenges(*)
+    `)
+    .eq('user_id', userId)
 
-  if (error) throw error
-  if (!data) return null
+  if (error) {
+    console.error('Error fetching user challenges:', error)
+    return []
+  }
 
-  return data as unknown as Database['public']['Tables']['advocates']['Row']
+  return data || []
+}
+
+// Profile Operations
+export async function getAdvocateProfile(userId: string): Promise<DbUser | null> {
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .eq('role', 'ADVOCATE')
+      .single()
+
+    if (error) {
+      console.error('Error fetching advocate profile:', error)
+      return null
+    }
+
+    return profile
+  } catch (error) {
+    console.error('Error in getAdvocateProfile:', error)
+    return null
+  }
 }
