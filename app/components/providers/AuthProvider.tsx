@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initializing, setInitializing] = useState(true)
   const processingAuth = useRef(false)
+  const authChangePromise = useRef<Promise<void> | null>(null)
 
   const ensureUserRecord = async (authUser: User) => {
     if (!authUser?.id) return null
@@ -117,28 +118,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: { user: User }) => {
-        if (!mounted || processingAuth.current) return
-        console.log('Auth state changed:', event, session?.user?.id)
+        if (!mounted) return
 
-        processingAuth.current = true
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          setLoading(true)
+        // Create a new promise for this auth change
+        authChangePromise.current = (async () => {
           try {
-            await ensureUserRecord(session.user)
+            console.log('Auth state changed:', event, session?.user?.id)
+            setUser(session?.user ?? null)
+            
+            if (session?.user) {
+              setLoading(true)
+              await ensureUserRecord(session.user)
+            } else {
+              setDbUser(null)
+            }
           } catch (error) {
             console.error('Error handling auth state change:', error)
           } finally {
             if (mounted) {
               setLoading(false)
-              processingAuth.current = false
             }
           }
-        } else {
-          setDbUser(null)
-          processingAuth.current = false
-        }
+        })()
+
+        await authChangePromise.current
       }
     )
 
@@ -157,6 +160,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
+      // Wait for the auth state change to complete
+      await authChangePromise.current
     } finally {
       setLoading(false)
       processingAuth.current = false
@@ -171,6 +176,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) throw error
+      // Wait for the auth state change to complete
+      await authChangePromise.current
     } finally {
       setLoading(false)
       processingAuth.current = false
