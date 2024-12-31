@@ -19,25 +19,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [dbUser, setDbUser] = useState<DbUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
 
-  // Initialize auth
+  // Initialize auth and fetch user data
   useEffect(() => {
-    if (initialized) return
+    let mounted = true
 
-    async function initializeAuth() {
+    async function initialize() {
       try {
         // Get the initial session
         const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+
         if (session?.user) {
           setUser(session.user)
+          // Fetch user data
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (!mounted) return
+
+          if (userError) {
+            console.error('Error fetching user data:', userError)
+          } else {
+            setDbUser(userData)
+          }
         }
 
-        // Listen for auth state changes
+        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event: AuthChangeEvent, session: Session | null) => {
+            if (!mounted) return
+
             if (session?.user) {
               setUser(session.user)
+              // Fetch user data on auth change
+              const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .single()
+              
+              if (!mounted) return
+
+              if (userError) {
+                console.error('Error fetching user data:', userError)
+              } else {
+                setDbUser(userData)
+              }
             } else {
               setUser(null)
               setDbUser(null)
@@ -45,69 +77,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         )
 
-        setInitialized(true)
-        setLoading(false)
         return () => {
+          mounted = false
           subscription.unsubscribe()
         }
       } catch (error) {
         console.error('Error initializing auth:', error)
-        setLoading(false)
-      }
-    }
-
-    initializeAuth()
-  }, [initialized])
-
-  // Fetch or update dbUser when auth user changes
-  useEffect(() => {
-    if (!user) {
-      setLoading(false)
-      return
-    }
-
-    async function fetchDbUser() {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user?.id)
-          .single()
-
-        if (error && error.code !== 'PGRST116') {
-          throw error
-        }
-
-        if (data) {
-          setDbUser(data)
-        } else if (user?.id && user?.email) {
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert([
-              {
-                id: user.id,
-                email: user.email,
-                role: 'ADVOCATE', // Default role
-                tier: 'BRONZE', // Default tier
-                points: 0,
-                is_active: true,
-              },
-            ])
-            .select()
-            .single()
-
-          if (createError) throw createError
-          setDbUser(newUser)
-        }
-      } catch (error) {
-        console.error('Error ensuring user record:', error)
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
-    fetchDbUser()
-  }, [user])
+    initialize()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -117,17 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       })
       if (error) throw error
-
-      // Wait for the session to be updated
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-      }
     } catch (error) {
       console.error('SignIn error:', error)
       throw error
-    } finally {
-      setLoading(false)
     }
   }
 
