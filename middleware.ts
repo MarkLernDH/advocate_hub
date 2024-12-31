@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -46,6 +47,22 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // If logged in but accessing auth routes and has role, redirect to appropriate dashboard
+  if (session && request.nextUrl.pathname.startsWith('/auth')) {
+    const { data: user } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+    
+    if (user?.role) {
+      return NextResponse.redirect(new URL(
+        user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
+        request.url
+      ))
+    }
   }
 
   // If logged in, fetch user role

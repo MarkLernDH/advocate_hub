@@ -6,14 +6,14 @@ export default async function Home() {
   const user = await getUser()
   
   if (!user) {
-    redirect('/auth/signin')
+    redirect('/auth/login')
   }
 
   // Get user role
   const { data } = await supabase
     .from('users')
     .select('role')
-    .eq('id', user.id)
+    .eq('id', user?.id)
     .single()
 
   // Redirect based on role
