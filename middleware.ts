@@ -58,10 +58,13 @@ export async function middleware(request: NextRequest) {
       .single()
     
     if (user?.role) {
-      return NextResponse.redirect(new URL(
-        user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
-        request.url
-      ))
+      // Don't redirect if we're in the callback route
+      if (!request.nextUrl.pathname.startsWith('/auth/callback')) {
+        return NextResponse.redirect(new URL(
+          user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
+          request.url
+        ))
+      }
     }
   }
 

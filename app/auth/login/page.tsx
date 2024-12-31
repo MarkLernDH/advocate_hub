@@ -17,13 +17,18 @@ function LoginPageContent() {
 
   useEffect(() => {
     if (!loading && user && dbUser) {
-      router.replace(redirectTo)
+      const targetPath = dbUser.role === 'ADMIN' ? '/admin/dashboard' : '/advocate/dashboard'
+      router.replace(targetPath)
     }
   }, [user, dbUser, loading, router, redirectTo])
 
   // Don't render the form if we're already authenticated
   if (loading || user) {
-    return null
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    )
   }
 
   return (

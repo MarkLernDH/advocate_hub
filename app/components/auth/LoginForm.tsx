@@ -25,8 +25,7 @@ export default function LoginForm() {
       // Clear form
       setEmail('')
       setPassword('')
-      // Navigate to the redirect URL
-      router.replace(redirectTo)
+      // Navigation will be handled by the login page component
     } catch (error: any) {
       setError(error.message || 'Invalid email or password')
     } finally {
