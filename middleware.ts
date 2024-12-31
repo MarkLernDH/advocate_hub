@@ -5,16 +5,14 @@ import type { NextRequest } from 'next/server'
 import { UserRole } from './types'
 
 export async function middleware(request: NextRequest) {
-  // Skip middleware for static files and api routes
-  if (
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/api') ||
-    request.nextUrl.pathname.startsWith('/static')
-  ) {
+  // Keep your static file check
+  if (request.nextUrl.pathname.startsWith('/_next') ||
+      request.nextUrl.pathname.startsWith('/api') ||
+      request.nextUrl.pathname.startsWith('/static')) {
     return NextResponse.next()
   }
 
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -47,28 +45,33 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { session } } = await supabase.auth.getSession()
+  
+  // Define public routes
+  const isPublicRoute = request.nextUrl.pathname === '/' || 
+    (request.nextUrl.pathname.startsWith('/auth') && 
+     !request.nextUrl.pathname.startsWith('/auth/callback'))
 
-  // Skip auth check for public routes
-  if (request.nextUrl.pathname === '/' || 
-      request.nextUrl.pathname.startsWith('/auth') && 
-      !request.nextUrl.pathname.startsWith('/auth/callback')) {
-    // If logged in on public routes, redirect to appropriate dashboard
-    if (session) {
-      const { data: user } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
+  // Get user role once if session exists
+  let userRole = null
+  if (session) {
+    const { data: user } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+    userRole = user?.role
+  }
 
-      if (user?.role) {
-        const targetPath = user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
-        return NextResponse.redirect(new URL(targetPath, request.url))
-      }
+  // Handle public routes
+  if (isPublicRoute) {
+    if (session && userRole) {
+      const targetPath = userRole === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
+      return NextResponse.redirect(new URL(targetPath, request.url))
     }
     return response
   }
 
-  // Require auth for protected routes
+  // Handle unauthenticated users
   if (!session) {
     const redirectUrl = new URL('/auth/login', request.url)
     if (request.nextUrl.pathname !== '/auth/login') {
@@ -77,14 +80,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Check user role for protected routes
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', session.user.id)
-    .single()
-
-  if (!user?.role) {
+  // Handle missing role
+  if (!userRole) {
     return NextResponse.redirect(new URL('/auth/error', request.url))
   }
 
@@ -92,23 +89,13 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
   const isAdvocateRoute = request.nextUrl.pathname.startsWith('/advocate')
 
-  if ((isAdminRoute && user.role !== UserRole.ADMIN) ||
-      (isAdvocateRoute && user.role !== UserRole.ADVOCATE)) {
-    const targetPath = user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
+  if ((isAdminRoute && userRole !== UserRole.ADMIN) ||
+      (isAdvocateRoute && userRole !== UserRole.ADVOCATE)) {
+    const targetPath = userRole === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
     return NextResponse.redirect(new URL(targetPath, request.url))
   }
-
+  console.log('Middleware path:', request.nextUrl.pathname)
+  console.log('Session:', !!session)
+  console.log('User role:', userRole)
   return response
-}
-
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
 }

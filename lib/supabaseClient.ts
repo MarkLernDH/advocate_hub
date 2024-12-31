@@ -24,6 +24,7 @@ export const supabase = createBrowserClient(
       path: '/',
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production'
-    }
+    },
+    
   }
 )
