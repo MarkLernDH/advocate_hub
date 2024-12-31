@@ -3,26 +3,17 @@
 import LoginForm from '../../components/auth/LoginForm'
 import { useAuth } from '../../components/providers/AuthProvider'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect } from 'react'
+import { Suspense } from 'react'
 
 interface Props {
   children: React.ReactNode
 }
 
 function LoginPageContent() {
-  const { user, dbUser, loading } = useAuth()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams?.get('redirectTo') || '/'
-
-  useEffect(() => {
-    if (!loading && user && dbUser) {
-      const targetPath = dbUser.role === 'ADMIN' ? '/admin/dashboard' : '/advocate/dashboard'
-      router.replace(targetPath)
-    }
-  }, [user, dbUser, loading, router, redirectTo])
+  const { user, loading } = useAuth()
 
   // Don't render the form if we're already authenticated
+  // Let middleware handle the redirect
   if (loading || user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

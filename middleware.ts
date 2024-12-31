@@ -49,23 +49,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If logged in but accessing auth routes and has role, redirect to appropriate dashboard
-  if (session && request.nextUrl.pathname.startsWith('/auth')) {
-    const { data: user } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-    
-    if (user?.role) {
-      // Don't redirect if we're in the callback route
-      if (!request.nextUrl.pathname.startsWith('/auth/callback')) {
-        return NextResponse.redirect(new URL(
-          user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
-          request.url
-        ))
-      }
-    }
+  // Skip auth checks for auth-related routes
+  if (request.nextUrl.pathname.startsWith('/auth')) {
+    return response
   }
 
   // If logged in, fetch user role
@@ -81,18 +67,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/error', request.url))
     }
 
-    // If accessing admin routes but not an admin, redirect to advocate dashboard
-    if (request.nextUrl.pathname.startsWith('/admin') && user.role !== UserRole.ADMIN) {
-      return NextResponse.redirect(new URL('/advocate/dashboard', request.url))
-    }
-
-    // If accessing advocate routes but not an advocate, redirect to admin dashboard
-    if (request.nextUrl.pathname.startsWith('/advocate') && user.role !== UserRole.ADVOCATE) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-    }
-
-    // If at root, redirect based on role
-    if (request.nextUrl.pathname === '/') {
+    // If at root or accessing wrong role's routes, redirect to appropriate dashboard
+    if (request.nextUrl.pathname === '/' || 
+        (request.nextUrl.pathname.startsWith('/admin') && user.role !== UserRole.ADMIN) ||
+        (request.nextUrl.pathname.startsWith('/advocate') && user.role !== UserRole.ADVOCATE)) {
       return NextResponse.redirect(new URL(
         user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
         request.url
@@ -106,13 +84,11 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
+     * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
-     * - auth folder (authentication pages)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public|auth).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
