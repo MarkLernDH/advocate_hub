@@ -49,8 +49,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Skip auth checks for auth-related routes
-  if (request.nextUrl.pathname.startsWith('/auth')) {
+  // Skip auth checks for auth-related routes except /auth/callback
+  if (request.nextUrl.pathname.startsWith('/auth') && 
+      !request.nextUrl.pathname.startsWith('/auth/callback')) {
+    // If logged in and trying to access login/signup pages, redirect to appropriate dashboard
+    if (session) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+
+      if (user?.role) {
+        const targetPath = user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
+        return NextResponse.redirect(new URL(targetPath, request.url))
+      }
+    }
     return response
   }
 
@@ -71,10 +85,8 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname === '/' || 
         (request.nextUrl.pathname.startsWith('/admin') && user.role !== UserRole.ADMIN) ||
         (request.nextUrl.pathname.startsWith('/advocate') && user.role !== UserRole.ADVOCATE)) {
-      return NextResponse.redirect(new URL(
-        user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard',
-        request.url
-      ))
+      const targetPath = user.role === UserRole.ADMIN ? '/admin/dashboard' : '/advocate/dashboard'
+      return NextResponse.redirect(new URL(targetPath, request.url))
     }
   }
 

@@ -19,51 +19,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [dbUser, setDbUser] = useState<DbUser | null>(null)
   const [loading, setLoading] = useState(true)
-
-  console.log('Initializing auth...')
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    // Get the initial session
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
-      console.log('Auth state changed: INITIAL_SESSION', session?.user?.id)
-      if (session?.user) {
-        setUser(session.user)
-      }
-    })
+    if (initialized) return
 
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      console.log('Auth state changed:', event, session?.user?.id)
-      if (session?.user) {
-        setUser(session.user)
-      } else {
-        setUser(null)
-        setDbUser(null)
-      }
-    })
+    async function initializeAuth() {
+      try {
+        // Get the initial session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          setUser(session.user)
+        }
 
-    return () => {
-      subscription.unsubscribe()
+        // Listen for auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event: AuthChangeEvent, session: Session | null) => {
+            if (session?.user) {
+              setUser(session.user)
+            } else {
+              setUser(null)
+              setDbUser(null)
+            }
+          }
+        )
+
+        setInitialized(true)
+        return () => {
+          subscription.unsubscribe()
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error)
+        setLoading(false)
+      }
     }
-  }, [])
+
+    initializeAuth()
+  }, [initialized])
 
   // Fetch or create user record when auth user changes
   useEffect(() => {
-    async function ensureUserRecord() {
-      if (!user) {
-        setLoading(false)
-        return
-      }
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
-      console.log('Ensuring user record for:', user.id)
+    async function ensureUserRecord() {
       try {
         // First try to get the existing user
         let { data: existingUser, error } = await supabase
           .from('users')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', user?.id)
           .single()
 
         if (error && error.code !== 'PGRST116') {
@@ -71,9 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (existingUser) {
-          console.log('Found existing user:', existingUser)
           setDbUser(existingUser)
-        } else {
+        } else if (user?.id && user?.email) {
           // Create new user if doesn't exist
           const { data: newUser, error: createError } = await supabase
             .from('users')
@@ -91,8 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .single()
 
           if (createError) throw createError
-
-          console.log('Created new user:', newUser)
           setDbUser(newUser)
         }
       } catch (error) {
