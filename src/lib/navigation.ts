@@ -1,12 +1,12 @@
 import { UserRole } from '@/types'
 
 export const paths = {
-  public: ['/', '/auth/login', '/auth/callback', '/auth/error', '/auth/logout'] as const,
+  public: ['/', '/login', '/callback', '/error'] as const,
   auth: {
-    login: '/auth/login',
-    error: '/auth/error',
-    callback: '/auth/callback',
-    logout: '/auth/logout'
+    login: '/login',
+    error: '/error',
+    callback: '/callback',
+    logout: '/logout'
   },
   dashboard: {
     admin: '/admin/dashboard',

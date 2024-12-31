@@ -3,10 +3,10 @@ export const SUPABASE_CONFIG = {
     cookie: 'advocacy-hub-auth',
     sessionExpiry: 60 * 60 * 8, // 8 hours
     routes: {
-      signIn: '/auth/login',
-      signOut: '/auth/logout',
-      callback: '/auth/callback',
-      unauthorized: '/auth/unauthorized',
+      signIn: '/login',
+      signOut: '/logout',
+      callback: '/callback',
+      unauthorized: '/unauthorized',
     }
   },
   routes: {

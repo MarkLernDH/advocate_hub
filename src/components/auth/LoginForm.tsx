@@ -22,10 +22,15 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
       const email = formData.get('email') as string
       const supabase = createClient()
 
+      // Use localhost:3000 for development, otherwise use window.location.origin
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3000'
+        : window.location.origin
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}${SUPABASE_CONFIG.auth.routes.callback}?redirectTo=${redirectTo || ''}`,
+          emailRedirectTo: `${baseUrl}${SUPABASE_CONFIG.auth.routes.callback}?redirectTo=${redirectTo || ''}`,
         },
       })
 

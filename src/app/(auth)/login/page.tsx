@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import LoginForm from '@/components/auth/LoginForm'
-import { SUPABASE_CONFIG } from '@/lib/supabase/config'
+import { paths } from '@/lib/navigation'
+import { UserRole } from '@/types'
 
 export default async function LoginPage({
   searchParams,
@@ -19,9 +20,9 @@ export default async function LoginPage({
       .eq('id', session.user.id)
       .single()
 
-    const redirectPath = profile?.role === 'ADMIN' 
-      ? SUPABASE_CONFIG.routes.admin.dashboard
-      : SUPABASE_CONFIG.routes.advocate.dashboard
+    const redirectPath = profile?.role === UserRole.ADMIN 
+      ? paths.dashboard.admin
+      : paths.dashboard.advocate
 
     return redirect(searchParams.redirectTo || redirectPath)
   }
