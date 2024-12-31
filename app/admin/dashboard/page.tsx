@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Card } from "@/components/ui/card"
-import { DbUser } from '@/types/index'
-import { supabase } from '@/lib/supabaseClient'
-import { useAuth } from '@/app/components/providers/AuthProvider'
+import { Card } from "../../../components/ui/card"
+import { DbUser } from '../../../types'
+import { supabase } from '../../../lib/supabaseClient'
+import { useAuth } from '../../components/providers/AuthProvider'
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth()
