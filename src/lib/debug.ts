@@ -10,6 +10,7 @@ type MiddlewareContext = {
   redirectCount: number
   redirectTo?: string | null
   error?: string
+  path?: string
 }
 
 export function logMiddleware(request: NextRequest, context: MiddlewareContext) {
