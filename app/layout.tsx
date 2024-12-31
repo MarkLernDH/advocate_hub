@@ -31,19 +31,19 @@ export default function RootLayout({
                   </div>
                   <div className="hidden sm:flex sm:items-center sm:space-x-8">
                     <Link 
-                      href="/challenges" 
+                      href="/advocate/dashboard" 
                       className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
                     >
-                      Challenges
+                      Dashboard
                     </Link>
                     <Link 
-                      href="/rewards" 
+                      href="/advocate/rewards" 
                       className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
                     >
                       Rewards
                     </Link>
                     <Link 
-                      href="/leaderboard" 
+                      href="/advocate/leaderboard" 
                       className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
                     >
                       Leaderboard
