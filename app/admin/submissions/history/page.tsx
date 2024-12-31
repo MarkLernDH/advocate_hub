@@ -4,8 +4,18 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../../../lib/supabaseClient'
 
+interface Submission {
+  id: string
+  user_id: string
+  challenge_id: string
+  created_at: string
+  status: string
+  points_awarded: number
+  // Add any other fields from your submissions table
+}
+
 export default function SubmissionsHistory() {
-  const [submissions, setSubmissions] = useState([])
+  const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -52,10 +62,13 @@ export default function SubmissionsHistory() {
               <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Status
               </th>
+              <th className="px-6 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Points
+              </th>
             </tr>
           </thead>
           <tbody>
-            {submissions.map((submission: any) => (
+            {submissions.map((submission) => (
               <tr key={submission.id}>
                 <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200">
                   {new Date(submission.created_at).toLocaleDateString()}
@@ -78,6 +91,9 @@ export default function SubmissionsHistory() {
                   >
                     {submission.status}
                   </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                  {submission.points_awarded}
                 </td>
               </tr>
             ))}
