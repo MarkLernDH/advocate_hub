@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
 
+  // Initialize auth
   useEffect(() => {
     if (initialized) return
 
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         )
 
         setInitialized(true)
+        setLoading(false)
         return () => {
           subscription.unsubscribe()
         }
@@ -57,17 +59,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
   }, [initialized])
 
-  // Fetch or create user record when auth user changes
+  // Fetch or update dbUser when auth user changes
   useEffect(() => {
     if (!user) {
       setLoading(false)
       return
     }
 
-    async function ensureUserRecord() {
+    async function fetchDbUser() {
       try {
-        // First try to get the existing user
-        let { data: existingUser, error } = await supabase
+        const { data, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', user?.id)
@@ -77,10 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error
         }
 
-        if (existingUser) {
-          setDbUser(existingUser)
+        if (data) {
+          setDbUser(data)
         } else if (user?.id && user?.email) {
-          // Create new user if doesn't exist
           const { data: newUser, error: createError } = await supabase
             .from('users')
             .insert([
@@ -106,11 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    ensureUserRecord()
+    fetchDbUser()
   }, [user])
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true)
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -125,14 +126,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('SignIn error:', error)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    setUser(null)
-    setDbUser(null)
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      setUser(null)
+      setDbUser(null)
+    } catch (error) {
+      console.error('SignOut error:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const value = {
